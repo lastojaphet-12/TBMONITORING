@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patient List</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Patient List</h1>
+      <p class="muted">Provider-only UI. Backend patient list endpoint is not implemented in this reference build.</p>
+      <a class="btn" href="/provider/dashboard.html">Back</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getUserRole } from '/assets/js/api.js';
+    const role = getUserRole();
+    if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+  </script>
+</body>
+</html>
+
+

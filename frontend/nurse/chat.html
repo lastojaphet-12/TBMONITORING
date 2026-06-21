@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Chat</h1>
+      <p class="muted">WebSocket endpoint: <code>/api/ws/chat</code> (echo stub)</p>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn" href="/nurse/dashboard.html">Back</a>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="card" style="height:240px;overflow:auto;" id="log"></div>
+      </div>
+
+      <div class="row" style="margin-top:12px;align-items:end;">
+        <div style="flex:1;min-width:240px;">
+          <label for="msg">Message</label>
+          <input id="msg" placeholder="Type message..." />
+        </div>
+        <div>
+          <button class="btn btn-primary" id="btnSend" type="button">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { wsConnect } from '/assets/js/api.js';
+    const log = document.getElementById('log');
+    const msg = document.getElementById('msg');
+    const btnSend = document.getElementById('btnSend');
+
+    const ws = await wsConnect((data)=>{
+      const line = document.createElement('div');
+      line.textContent = typeof data === 'string' ? data : JSON.stringify(data);
+      log.appendChild(line);
+      log.scrollTop = log.scrollHeight;
+    });
+
+    btnSend.addEventListener('click', ()=>{
+      if(ws.readyState !== WebSocket.OPEN) return;
+      ws.send(msg.value);
+      msg.value='';
+    });
+  </script>
+</body>
+</html>
+

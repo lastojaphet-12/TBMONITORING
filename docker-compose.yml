@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: lastone
+      POSTGRES_PASSWORD: lastone@123
+      POSTGRES_DB: tbmonitoring
+    ports:
+      - "5433:5432"
+    volumes:
+      - tb_postgres_data:/var/lib/postgresql/data
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    volumes:
+      - tb_influx_data:/var/lib/influxdb2
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://lastone:lastone@123@postgres:5432/tbmonitoring
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: changeme
+      INFLUX_ORG: tb
+      INFLUX_BUCKET: monitoring
+      JWT_SECRET_KEY: change_me_super_secret
+      JWT_ALGORITHM: HS256
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - influxdb
+
+
+  nginx:
+    image: nginx:1.27
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+
+volumes:
+  tb_postgres_data:
+  tb_influx_data:
+

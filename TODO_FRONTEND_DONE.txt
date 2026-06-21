@@ -1,0 +1,9 @@
+Frontend edits applied (partial):
+- Added requireRole() to frontend/assets/js/api.js
+- Updated nurse/alerts.html: use table class and add nurse/provider role guard
+- Updated provider/patient_list.html: add provider role guard
+- Updated patient/symptoms.html: add patient/nurse role guard
+- Updated patient/medication.html: add patient role guard
+- Updated nurse/reports.html: add nurse/provider role guard
+- Updated nurse/monitoring.html: added warning notice container (role guard not yet applied)
+

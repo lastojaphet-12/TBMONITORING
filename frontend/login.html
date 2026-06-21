@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TB Monitoring - Login</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container page-center">
+    <div class="card login-card">
+      <h1>Login</h1>
+      <p class="muted">Sign in to access role-based pages.</p>
+
+      <div id="notice" class="notice" style="display:none"></div>
+
+      <label for="username">Username</label>
+      <input id="username" autocomplete="username" value="" placeholder="e.g., lastone" />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="e.g., lastone@123" value="" />
+
+      <div class="login-actions">
+        <button class="btn btn-primary" id="btnLogin" type="button">Login</button>
+        <a class="btn" href="/" id="btnHome">Home</a>
+      </div>
+    </div>
+  </div>
+
+
+<script type="module">
+    import { decodeJwtPayload, setToken } from '/assets/js/api.js';
+
+    const notice = document.getElementById('notice');
+    const show = (msg, kind='error') => {
+      notice.style.display='block';
+      notice.className = `notice ${kind}`;
+      notice.textContent = msg;
+    };
+
+    document.getElementById('btnLogin').addEventListener('click', async ()=>{
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try{
+        notice.style.display='none';
+
+// FastAPI OAuth2PasswordRequestForm expects URL-encoded fields.
+        const form = new URLSearchParams({ username, password });
+        const res = await fetch('/api/auth/login', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+          body: form
+        });
+
+        const data = await res.json().catch(()=>null);
+        if(!res.ok){
+          throw new Error((data && data.detail) ? data.detail : `HTTP ${res.status}`);
+        }
+
+        if(!data?.access_token) throw new Error('Login failed: missing token');
+        setToken(data.access_token);
+
+        const payload = decodeJwtPayload(data.access_token);
+        const role = payload?.role;
+
+        if(role === 'provider') location.href = '/provider/dashboard.html';
+        else if(role === 'nurse') location.href = '/nurse/dashboard.html';
+        else if(role === 'patient') location.href = '/patient/dashboard.html';
+        else throw new Error('Login succeeded but role was not recognized');
+      }catch(err){
+        show(err.message || 'Login failed');
+      }
+    });
+  </script>
+
+</body>
+</html>
+

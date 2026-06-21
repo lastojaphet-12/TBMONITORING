@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patient Dashboard</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="row" style="align-items:center;justify-content:space-between;">
+        <div>
+          <h1>Patient Dashboard</h1>
+          <div class="muted">Role: patient</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="btn" href="/patient/symptoms.html">Symptoms</a>
+          <a class="btn" href="/patient/medication.html">Medication</a>
+          <a class="btn" href="/patient/progress.html">Progress</a>
+          <a class="btn" href="/patient/notifications.html">Notifications</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getUserRole } from '/assets/js/api.js';
+    const role = getUserRole();
+    if(role && role !== 'patient') location.href = '/'+role+'/dashboard.html';
+  </script>
+</body>
+</html>
+
+

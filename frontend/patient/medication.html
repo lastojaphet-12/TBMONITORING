@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Medication</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Medication & Adherence</h1>
+      <p class="muted">Calls <code>POST /api/adherence/update</code></p>
+
+      <div id="notice" class="notice" style="display:none"></div>
+
+      <label for="patient_id">Patient ID</label>
+      <input id="patient_id" type="number" placeholder="e.g., 1" />
+
+      <div class="row">
+        <div style="flex:1;min-width:220px;">
+          <label><input type="checkbox" id="taken" checked /> Took medication today</label>
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <label for="taken_time">Taken time (ISO)</label>
+          <input id="taken_time" placeholder="2026-06-21T10:30:00Z" />
+        </div>
+      </div>
+
+      <label for="remarks">Remarks (optional)</label>
+      <textarea id="remarks" rows="3" placeholder="e.g., felt dizzy"></textarea>
+
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnUpdate" type="button">Update adherence</button>
+        <a class="btn" href="/patient/dashboard.html">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiFetch, getUserRole } from '/assets/js/api.js';
+
+    if(getUserRole() !== 'patient'){
+      location.href = '/login.html';
+    }
+
+    const notice = document.getElementById('notice');
+    const show = (msg, kind='error') => {
+      notice.style.display='block';
+      notice.className = `notice ${kind}`;
+      notice.textContent = msg;
+    };
+
+    document.getElementById('btnUpdate').addEventListener('click', async ()=>{
+      const patient_id = Number(document.getElementById('patient_id').value);
+      if(!patient_id){ show('Enter patient_id'); return; }
+
+      const taken = document.getElementById('taken').checked;
+      const taken_time_raw = document.getElementById('taken_time').value.trim();
+      const taken_time = taken_time_raw || new Date().toISOString();
+
+      const payload = {
+        patient_id,
+        taken,
+        taken_time,
+        remarks: document.getElementById('remarks').value.trim() || null,
+      };
+
+      try{
+        notice.style.display='none';
+        const res = await apiFetch('/adherence/update', { method:'POST', body:payload });
+        show(`Updated. Response: ${JSON.stringify(res)}`,'success');
+      }catch(e){
+        show(e.message||'Update failed');
+      }
+    });
+  </script>
+</body>
+</html>
+

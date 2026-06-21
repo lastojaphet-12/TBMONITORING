@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alerts</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Alerts</h1>
+      <p class="muted">Calls <code>GET /api/alerts</code> and <code>POST /api/alerts/{alert_id}/resolve</code> (stubbed backend)</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnRefresh" type="button">Refresh</button>
+        <a class="btn" href="/nurse/dashboard.html">Back</a>
+      </div>
+      <div id="notice" class="notice" style="display:none;margin-top:12px;"></div>
+
+      <div style="margin-top:14px;">
+        <table class="table">
+          <thead>
+            <tr><th>ID</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiFetch, getUserRole } from '/assets/js/api.js';
+
+    if(getUserRole() !== 'nurse' && getUserRole() !== 'provider'){
+      location.href = '/login.html';
+    }
+
+    const rows = document.getElementById('rows');
+    const notice = document.getElementById('notice');
+
+    const show = (msg, kind='error') => {
+      notice.style.display='block';
+      notice.className = `notice ${kind}`;
+      notice.textContent = msg;
+    };
+
+    const load = async ()=>{
+      rows.innerHTML='';
+      try{
+        notice.style.display='none';
+        const data = await apiFetch('/alerts');
+        const alerts = data.alerts || [];
+        if(alerts.length===0){
+          rows.innerHTML = `<tr><td colspan="3" class="muted">No alerts (or backend stub).</td></tr>`;
+          return;
+        }
+        for(const a of alerts){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${a.id ?? ''}</td>
+            <td>${a.status ?? ''}</td>
+            <td>
+              <button class="btn" type="button" data-id="${a.id}">Resolve</button>
+            </td>
+          `;
+          tr.querySelector('button').addEventListener('click', async ()=>{
+            try{
+              await apiFetch(`/alerts/${a.id}/resolve`, { method:'POST', body:{} });
+              show('Resolved. Refreshing...','success');
+              await load();
+            }catch(e){ show(e.message||'Resolve failed'); }
+          });
+          rows.appendChild(tr);
+        }
+      }catch(e){
+        show(e.message||'Failed to load alerts');
+      }
+    };
+
+    document.getElementById('btnRefresh').addEventListener('click', load);
+    load();
+  </script>
+</body>
+</html>
+

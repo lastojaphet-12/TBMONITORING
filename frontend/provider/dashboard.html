@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Provider Dashboard</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="row" style="align-items:center;justify-content:space-between;">
+        <div>
+          <h1>Provider Dashboard</h1>
+          <div class="muted">Role: provider</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="btn" href="/provider/register_patient.html">Register Patient</a>
+          <a class="btn" href="/provider/patient_list.html">Patient List</a>
+          <a class="btn" href="/provider/profile.html">Profile</a>
+          <button class="btn btn-danger" id="btnLogout" type="button">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h2>Quick actions</h2>
+      <div class="row">
+        <a class="btn btn-primary" href="/provider/register_patient.html">Register patient</a>
+        <a class="btn" href="/provider/patient_list.html">View patients</a>
+        <a class="btn" href="/nurse/dashboard.html">Go to nurse pages</a>
+      </div>
+      <p class="muted" style="margin-top:10px;">Backend endpoints are currently stubs; UI wiring is ready.</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { clearToken, getUserRole } from '/assets/js/api.js';
+
+    const role = getUserRole();
+    if(role && role !== 'provider'){
+      location.href = '/'+role+'/dashboard.html';
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', ()=>{
+      clearToken();
+      location.href='/login.html';
+    });
+  </script>
+
+</body>
+</html>
+

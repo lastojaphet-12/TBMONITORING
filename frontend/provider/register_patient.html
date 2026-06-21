@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register Patient</title>
+  <link rel="stylesheet" href="/assets/css/common.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Register Patient</h1>
+      <p class="muted">Submits to <code>POST /api/patients</code></p>
+      <div id="notice" class="notice" style="display:none"></div>
+
+      <label for="tb_number">TB Number</label>
+      <input id="tb_number" placeholder="TB-001" />
+
+      <label for="full_name">Full Name</label>
+      <input id="full_name" placeholder="John Doe" />
+
+      <label for="gender">Gender</label>
+      <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label for="date_of_birth">Date of Birth</label>
+      <input id="date_of_birth" placeholder="YYYY-MM-DD" />
+
+      <div class="row">
+        <div style="flex:1;min-width:220px;">
+          <label for="phone">Phone (optional)</label>
+          <input id="phone" placeholder="+250..." />
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <label for="district">District (optional)</label>
+          <input id="district" placeholder="District" />
+        </div>
+      </div>
+
+      <label for="village">Village (optional)</label>
+      <input id="village" placeholder="Village" />
+
+      <div class="row">
+        <div style="flex:1;min-width:220px;">
+          <label for="provider_id">Provider ID (optional)</label>
+          <input id="provider_id" type="number" />
+        </div>
+        <div style="flex:1;min-width:220px;">
+          <label for="nurse_id">Nurse ID (optional)</label>
+          <input id="nurse_id" type="number" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnSubmit" type="button">Register</button>
+        <a class="btn" href="/provider/dashboard.html">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiFetch } from '/assets/js/api.js';
+    const notice = document.getElementById('notice');
+    const show = (msg, kind='error') => {
+      notice.style.display='block';
+      notice.className = `notice ${kind}`;
+      notice.textContent = msg;
+    };
+
+    document.getElementById('btnSubmit').addEventListener('click', async ()=>{
+      const payload = {
+        tb_number: document.getElementById('tb_number').value.trim(),
+        full_name: document.getElementById('full_name').value.trim(),
+        gender: document.getElementById('gender').value,
+        date_of_birth: document.getElementById('date_of_birth').value.trim(),
+        phone: document.getElementById('phone').value.trim() || null,
+        district: document.getElementById('district').value.trim() || null,
+        village: document.getElementById('village').value.trim() || null,
+        provider_id: document.getElementById('provider_id').value ? Number(document.getElementById('provider_id').value) : null,
+        nurse_id: document.getElementById('nurse_id').value ? Number(document.getElementById('nurse_id').value) : null,
+      };
+
+      try{
+        notice.style.display='none';
+        const res = await apiFetch('/patients', { method:'POST', body:payload });
+        show(`Registered (response): ${JSON.stringify(res)}`,'success');
+      }catch(e){
+        show(e.message || 'Failed to register');
+      }
+    });
+  </script>
+</body>
+</html>
+
