@@ -3,20 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Patient Reports - TBMonitor</title>
+  <title>Patient Details - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
   <style>
-    .report-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-    .report-header h1{margin:0;font-size:1.5rem}
+    .detail-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .detail-header h1{margin:0;font-size:1.5rem}
     .detail-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
     .detail-meta-item{display:flex;flex-direction:column}
     .detail-meta-item .label{font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600}
     .detail-meta-item .value{font-size:1rem;color:var(--text-dark);font-weight:500}
     .risk-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:0.95rem;font-weight:700}
-    .manual-entry{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
-    .manual-entry > div{flex:1;min-width:200px}
-    .adherence-good{color:var(--success);font-weight:600}
-    .adherence-missed{color:var(--danger);font-weight:600}
   </style>
 </head>
 <body>
@@ -32,7 +28,7 @@
         <a href="/nurse/dashboard.html">Dashboard</a>
         <a href="/nurse/monitoring.html">Monitoring</a>
         <a href="/nurse/alerts.html">Alerts<span class="alert-badge" id="alertBadge" style="display:none">0</span></a>
-        <a href="/nurse/reports.html" class="active">Reports</a>
+        <a href="/nurse/reports.html">Reports</a>
         <a href="/nurse/chat.html">Chat</a>
         <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
       </div>
@@ -41,48 +37,20 @@
   </nav>
 
   <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
-    <div class="page-header">
-      <h1>Patient Reports</h1>
-      <a class="btn" href="/nurse/dashboard.html">Back to Dashboard</a>
+    <div id="loadingNotice" class="notice" style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <div class="spinner"></div> Loading patient details...
     </div>
-
-    <div class="card" style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <div class="feature-card-icon">
-          <img src="/assets/images/icon-medication.svg" alt="Reports" width="32" height="32" />
-        </div>
-        <div>
-          <h2 style="margin:0">Generate a Patient Report</h2>
-          <p class="muted" style="margin:4px 0 0">View symptom history, adherence data, and risk snapshot for any patient.</p>
-        </div>
-      </div>
-
-      <div class="manual-entry" id="manualEntry">
-        <div>
-          <label for="patientIdInput">Patient ID</label>
-          <input id="patientIdInput" type="number" placeholder="e.g., 1" />
-        </div>
-        <div>
-          <button class="btn btn-primary" id="btnLoad" type="button">Load Report</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="loadingNotice" class="notice" style="display:none;align-items:center;gap:8px;margin-bottom:16px;">
-      <div class="spinner"></div> Loading report...
-    </div>
-
-    <div id="reportArea" style="display:none;">
+    <div id="contentArea" style="display:none;">
 
       <div class="page-header">
-        <div class="report-header">
-          <a class="btn" href="/nurse/monitoring.html">&larr; Patient List</a>
+        <div class="detail-header">
+          <a class="btn" href="/nurse/monitoring.html">&larr; Back to Patients</a>
           <h1 id="patientName">Patient</h1>
           <span class="badge badge-success" id="tbNumber"></span>
-          <span class="risk-badge" id="riskBadge" style="display:none;"></span>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button class="btn" id="btnRefreshReport" type="button">Refresh</button>
+          <button class="btn" id="btnRefresh" type="button">Refresh</button>
+          <a class="btn" href="/nurse/reports.html" id="fullReportLink">Full Report</a>
         </div>
       </div>
 
@@ -93,7 +61,7 @@
         </div>
         <div class="card">
           <h2>Risk Snapshot</h2>
-          <div id="riskSection" style="min-height:40px;">
+          <div id="riskSection" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;min-height:48px;">
             <span class="muted">Loading...</span>
           </div>
           <div style="margin-top:16px;">
@@ -126,7 +94,9 @@
                   <th>O2 Sat</th>
                 </tr>
               </thead>
-              <tbody id="symptomTableBody"></tbody>
+              <tbody id="symptomTableBody">
+                <tr><td colspan="10" class="loading-row"><div class="spinner"></div>Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -141,7 +111,9 @@
                   <th>Remarks</th>
                 </tr>
               </thead>
-              <tbody id="adherenceTableBody"></tbody>
+              <tbody id="adherenceTableBody">
+                <tr><td colspan="3" class="loading-row"><div class="spinner"></div>Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -161,7 +133,9 @@
               <th>Action</th>
             </tr>
           </thead>
-          <tbody id="alertTableBody"></tbody>
+          <tbody id="alertTableBody">
+            <tr><td colspan="5" class="muted">No open alerts.</td></tr>
+          </tbody>
         </table>
       </div>
 
@@ -188,6 +162,25 @@
     document.getElementById('logoutBtn').addEventListener('click', doLogout);
     document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
 
+    (async function updateAlertBadge() {
+      try {
+        const data = await apiFetch('/alerts');
+        const badge = document.getElementById('alertBadge');
+        const count = (data.alerts || []).length;
+        if (badge && count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
+      } catch(e) { /* ignore */ }
+    })();
+
+    const params = new URLSearchParams(location.search);
+    const patientId = params.get('id');
+
+    if(!patientId){
+      document.getElementById('loadingNotice').innerHTML = '<span class="muted">No patient ID specified. <a href="/nurse/monitoring.html">Go back to patient list.</a></span>';
+      return;
+    }
+
+    document.getElementById('fullReportLink').href = `/nurse/reports.html?id=${patientId}`;
+
     const riskColors = {
       'Critical': 'badge-danger',
       'High Risk': 'badge-danger',
@@ -195,33 +188,24 @@
       'Low Risk': 'badge-success',
     };
 
-    let currentPatientId = null;
-
-    async function loadReport(patientId) {
-      currentPatientId = patientId;
+    async function loadPatient() {
       const loading = document.getElementById('loadingNotice');
-      const reportArea = document.getElementById('reportArea');
+      const content = document.getElementById('contentArea');
 
       try {
         loading.style.display = 'flex';
-        loading.innerHTML = '<div class="spinner"></div> Loading report...';
-        reportArea.style.display = 'none';
+        loading.innerHTML = '<div class="spinner"></div> Loading patient details...';
+        content.style.display = 'none';
 
-        const [reportData, symptomsData, adherenceData] = await Promise.all([
+        const [patientData, reportData, symptomsData, adherenceData] = await Promise.all([
+          apiFetch(`/patients/${patientId}`),
           apiFetch(`/reports/patient/${patientId}`),
           apiFetch(`/symptoms/history/${patientId}`),
           apiFetch(`/adherence/history/${patientId}`),
         ]);
 
+        const patient = patientData.patient;
         const report = reportData.report;
-        if (!report) {
-          loading.style.display = 'flex';
-          loading.className = 'notice error';
-          loading.innerHTML = `Patient #${patientId} not found.`;
-          return;
-        }
-
-        const patient = report.patient;
         const symptoms = symptomsData.symptoms || [];
         const adherence = adherenceData.adherence || [];
 
@@ -237,31 +221,26 @@
         ].map(m => `<div class="detail-meta-item"><span class="label">${m.label}</span><span class="value">${m.value}</span></div>`).join('');
         document.getElementById('patientMeta').innerHTML = metaHtml;
 
-        const risk = report.risk_snapshot;
+        const risk = report?.risk_snapshot;
         const riskSection = document.getElementById('riskSection');
-        const riskBadge = document.getElementById('riskBadge');
-        if (risk) {
+        if(risk){
           const badgeClass = riskColors[risk.risk_level] || 'badge-warning';
           riskSection.innerHTML = `
             <span class="risk-badge ${badgeClass}">${risk.risk_level}</span>
-            <span style="color:var(--text-muted);margin-left:12px;">Score: <strong>${risk.risk_score}</strong></span>
+            <span style="color:var(--text-muted)">Score: <strong>${risk.risk_score}</strong></span>
           `;
-          riskBadge.style.display = 'inline-block';
-          riskBadge.className = `risk-badge ${badgeClass}`;
-          riskBadge.textContent = risk.risk_level;
         } else {
-          riskSection.innerHTML = '<span class="muted">No risk data yet.</span>';
-          riskBadge.style.display = 'none';
+          riskSection.innerHTML = '<span class="muted">No risk data yet. Submit symptoms to generate a risk score.</span>';
         }
 
-        const ls = report.latest_symptoms;
+        const ls = report?.latest_symptoms;
         document.getElementById('latestSymptoms').innerHTML = ls
           ? `<span>Cough: ${ls.cough_duration ?? '-'}d | O2: ${ls.oxygen_saturation ?? '-'}% | Blood: ${ls.blood_in_sputum ? 'Yes' : 'No'} | Fever: ${ls.fever ? 'Yes' : 'No'} | Date: ${new Date(ls.created_at).toLocaleDateString()}</span>`
           : '<span class="muted">No symptom data.</span>';
 
-        const la = report.latest_adherence;
+        const la = report?.latest_adherence;
         document.getElementById('latestAdherence').innerHTML = la
-          ? `<span class="${la.taken ? 'adherence-good' : 'adherence-missed'}">${la.taken ? 'Taken' : 'Missed'}</span><span style="color:var(--text-muted)"> | Time: ${new Date(la.taken_time).toLocaleString()}${la.remarks ? ' | Remarks: ' + la.remarks : ''}</span>`
+          ? `<span>Taken: ${la.taken ? 'Yes' : 'No'} | Time: ${new Date(la.taken_time).toLocaleString()}${la.remarks ? ' | Remarks: ' + la.remarks : ''}</span>`
           : '<span class="muted">No adherence data.</span>';
 
         document.getElementById('symptomTableBody').innerHTML = symptoms.length
@@ -279,7 +258,7 @@
               <td>${s.oxygen_saturation ?? '-'}</td>
             </tr>
           `).join('')
-          : '<tr><td colspan="10" class="muted" style="text-align:center;padding:24px;">No symptom reports yet.</td></tr>';
+          : '<tr><td colspan="10" class="muted">No symptom reports yet.</td></tr>';
 
         document.getElementById('adherenceTableBody').innerHTML = adherence.length
           ? adherence.map(a => `
@@ -289,9 +268,9 @@
               <td>${a.remarks || '-'}</td>
             </tr>
           `).join('')
-          : '<tr><td colspan="3" class="muted" style="text-align:center;padding:24px;">No adherence records yet.</td></tr>';
+          : '<tr><td colspan="3" class="muted">No adherence records yet.</td></tr>';
 
-        const alerts = report.open_alerts || [];
+        const alerts = report?.open_alerts || [];
         document.getElementById('alertTableBody').innerHTML = alerts.length
           ? alerts.map(a => `
             <tr>
@@ -306,54 +285,27 @@
 
         document.querySelectorAll('.btn-resolve').forEach(btn => {
           btn.addEventListener('click', async () => {
-            try {
+            try{
               await apiFetch(`/alerts/${btn.dataset.id}/resolve`, { method: 'POST' });
               showToast('Alert resolved!', 'success');
-              loadReport(patientId);
-            } catch (e) {
+              loadPatient();
+            }catch(e){
               showToast(e.message || 'Failed to resolve', 'error');
             }
           });
         });
 
         loading.style.display = 'none';
-        reportArea.style.display = 'block';
-      } catch (e) {
+        content.style.display = 'block';
+      } catch(e) {
         loading.style.display = 'flex';
         loading.className = 'notice error';
-        loading.innerHTML = `Error: ${e.message}`;
+        loading.innerHTML = `Error: ${e.message}. <a href="/nurse/monitoring.html">Go back to patient list.</a>`;
       }
     }
 
-    document.getElementById('btnLoad').addEventListener('click', () => {
-      const pid = Number(document.getElementById('patientIdInput').value);
-      if (!pid) { showToast('Enter a Patient ID', 'warning'); return; }
-      loadReport(pid);
-    });
-
-    document.getElementById('patientIdInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') document.getElementById('btnLoad').click();
-    });
-
-    document.getElementById('btnRefreshReport').addEventListener('click', () => {
-      if (currentPatientId) loadReport(currentPatientId);
-    });
-
-    (async function updateAlertBadge() {
-      try {
-        const data = await apiFetch('/alerts');
-        const count = (data.alerts || []).length;
-        const badge = document.getElementById('alertBadge');
-        if (badge && count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
-      } catch(e) { /* ignore */ }
-    })();
-
-    const params = new URLSearchParams(location.search);
-    const paramId = params.get('id');
-    if (paramId) {
-      document.getElementById('patientIdInput').value = paramId;
-      loadReport(Number(paramId));
-    }
+    document.getElementById('btnRefresh').addEventListener('click', loadPatient);
+    loadPatient();
   </script>
 
 </body>

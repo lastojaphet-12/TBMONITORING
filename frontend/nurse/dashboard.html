@@ -3,33 +3,281 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nurse Dashboard</title>
+  <title>Nurse Dashboard - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
+  <style>
+    .section{padding:80px 0}
+    .section-hero{background:var(--bg-offwhite);padding:112px 0 80px}
+    .section-features{background:var(--bg-white)}
+    .section-stats{background:var(--bg-offwhite)}
+    .section-content{width:100%;padding:0 max(24px,5vw);margin:0 auto}
+
+    .dash-hero{display:flex;align-items:center;gap:64px}
+    .dash-hero-text{flex:1;min-width:0;text-align:center}
+    .dash-hero-text h1{font-size:clamp(1.75rem,4vw,3rem);font-weight:700;color:var(--text-dark);line-height:1.2;margin:0}
+    .dash-hero-text h1 span{color:var(--primary)}
+    .dash-hero-text p{color:var(--text-muted);margin-top:16px;font-size:clamp(0.95rem,1.2vw,1.1rem);line-height:1.6;max-width:520px;margin-left:auto;margin-right:auto}
+    .dash-hero-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+    .dash-hero-image{flex:1;min-width:0;display:none}
+    .dash-hero-image img{width:100%;max-width:520px;height:auto}
+
+    .dash-section-title{text-align:center;margin-bottom:48px}
+    .dash-section-title h2{font-size:clamp(1.35rem,2.5vw,2rem);font-weight:700;color:var(--text-dark);margin:0}
+    .dash-section-title p{color:var(--text-muted);margin-top:8px;font-size:clamp(0.9rem,1.1vw,1.05rem)}
+
+    .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+
+    .dash-card{background:var(--bg-white);border:1px solid var(--border);border-radius:12px;padding:28px;box-shadow:var(--shadow);transition:box-shadow 0.2s}
+    .dash-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+    a.dash-card{text-decoration:none;color:inherit;display:block}
+    .dash-card-icon{width:56px;height:56px;background:var(--accent-light);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+    .dash-card-icon img{width:32px;height:32px}
+    .dash-card h3{font-size:1.125rem;font-weight:700;color:var(--text-dark);margin:0 0 12px}
+    .dash-card p{color:var(--text-muted);font-size:0.875rem;line-height:1.6;margin:0}
+
+    .dash-stats{display:flex;align-items:center;gap:48px;flex-wrap:wrap}
+    .dash-stats-text{flex:1;min-width:260px}
+    .dash-stats-text h2{font-size:clamp(1.35rem,2.5vw,2rem);font-weight:700;color:var(--text-dark);margin:0}
+    .dash-stats-text p{color:var(--text-muted);margin-top:8px;font-size:clamp(0.9rem,1.1vw,1.05rem)}
+    .dash-stats-grid{flex:1;min-width:300px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .dash-stat-card{background:var(--bg-white);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;box-shadow:var(--shadow)}
+    .dash-stat-card .stat-num{font-size:clamp(1.5rem,2.5vw,2rem);font-weight:700;color:var(--primary);display:block}
+    .dash-stat-card .stat-label{font-size:0.875rem;color:var(--text-muted);display:block;margin-top:8px}
+
+    .section-adherence{background:var(--bg-white);padding:64px 0}
+    .adherence-table-wrap{overflow-x:auto;margin-top:24px}
+    .adherence-table-wrap .table th,.adherence-table-wrap .table td{white-space:nowrap}
+
+    @media(min-width:768px){
+      .section-hero{padding:128px 0 96px}
+      .dash-hero-text{text-align:left}
+      .dash-hero-text p{margin-left:0;margin-right:0}
+      .dash-hero-actions{justify-content:flex-start}
+      .dash-hero-image{display:block}
+    }
+    @media(min-width:1200px){
+      .dash-grid{grid-template-columns:repeat(4,1fr)}
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="row" style="align-items:center;justify-content:space-between;">
-        <div>
-          <h1>Nurse Dashboard</h1>
-          <div class="muted">Role: nurse</div>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/nurse/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/nurse/dashboard.html" class="active">Dashboard</a>
+        <a href="/nurse/monitoring.html">Monitoring</a>
+        <a href="/nurse/alerts.html">Alerts<span class="alert-badge" id="alertBadge" style="display:none">0</span></a>
+        <a href="/nurse/reports.html">Reports</a>
+        <a href="/nurse/chat.html">Chat</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <section class="section section-hero">
+    <div class="section-content">
+      <div class="dash-hero">
+        <div class="dash-hero-text">
+          <h1>Welcome, <span id="nurseName">Nurse</span></h1>
+          <p>Monitor your patients, track critical alerts, and manage treatment progress — all from one dashboard.</p>
+          <div class="dash-hero-actions">
+            <a class="btn btn-primary" href="/nurse/monitoring.html">View Patients</a>
+            <a class="btn" href="/nurse/alerts.html">Review Alerts</a>
+          </div>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="btn" href="/nurse/monitoring.html">Monitoring</a>
-          <a class="btn" href="/nurse/alerts.html">Alerts</a>
-          <a class="btn" href="/nurse/reports.html">Reports</a>
-          <a class="btn" href="/nurse/chat.html">Chat</a>
+        <div class="dash-hero-image">
+          <img src="/assets/images/hero-illustration.webp" alt="Nurse Dashboard" width="520" height="416" />
         </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <section class="section section-features">
+    <div class="section-content">
+      <div class="dash-section-title">
+        <h2>Your Care Tools</h2>
+        <p>Everything you need to supervise TB treatment at a glance.</p>
+      </div>
+      <div class="dash-grid">
+        <a href="/nurse/monitoring.html" class="dash-card">
+          <div class="dash-card-icon">
+            <img src="/assets/images/icon-symptoms.svg" alt="Monitoring" width="32" height="32" />
+          </div>
+          <h3>Patient Monitoring</h3>
+          <p>View all assigned patients, their symptom reports, and medication adherence at a glance.</p>
+        </a>
+        <a href="/nurse/alerts.html" class="dash-card">
+          <div class="dash-card-icon">
+            <img src="/assets/images/icon-alerts.svg" alt="Alerts" width="32" height="32" />
+          </div>
+          <h3>Alert Management</h3>
+          <p>Review and resolve critical alerts. Get notified in real-time when a patient needs attention.</p>
+        </a>
+        <a href="/nurse/reports.html" class="dash-card">
+          <div class="dash-card-icon">
+            <img src="/assets/images/icon-medication.svg" alt="Reports" width="32" height="32" />
+          </div>
+          <h3>Patient Reports</h3>
+          <p>Generate detailed reports with symptom history, adherence tracking, and risk snapshots.</p>
+        </a>
+        <a href="/nurse/chat.html" class="dash-card">
+          <div class="dash-card-icon">
+            <img src="/assets/images/icon-symptoms.svg" alt="Chat" width="32" height="32" />
+          </div>
+          <h3>Messaging</h3>
+          <p>Communicate with patients and providers through the secure messaging system.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-stats">
+    <div class="section-content">
+      <div class="dash-stats">
+        <div class="dash-stats-text">
+          <h2>Your Monitoring Snapshot</h2>
+          <p id="snapshotDesc">Loading your latest stats...</p>
+        </div>
+        <div class="dash-stats-grid">
+          <div class="dash-stat-card">
+            <span class="stat-num" id="statPatients">--</span>
+            <span class="stat-label">Total Patients</span>
+          </div>
+          <div class="dash-stat-card">
+            <span class="stat-num" id="statOpenAlerts">--</span>
+            <span class="stat-label">Open Alerts</span>
+          </div>
+          <div class="dash-stat-card">
+            <span class="stat-num" id="statCritical">--</span>
+            <span class="stat-label">Critical</span>
+          </div>
+          <div class="dash-stat-card">
+            <span class="stat-num" id="statHigh">--</span>
+            <span class="stat-label">High Risk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-adherence">
+    <div class="section-content">
+      <div class="dash-section-title">
+        <h2>Medication Adherence Overview</h2>
+        <p id="adherenceDesc">Loading adherence data...</p>
+      </div>
+      <div class="adherence-table-wrap card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>TB Number</th>
+              <th>Last Taken</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="adherenceTableBody">
+            <tr><td colspan="5" class="loading-row"><div class="spinner"></div>Loading adherence data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
 
   <script type="module">
-    import { getUserRole } from '/assets/js/api.js';
+    import { getUserRole, apiFetch, clearToken, showToast, wsConnectAlerts } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
+
     const role = getUserRole();
     if(role && role !== 'nurse') location.href = '/'+role+'/dashboard.html';
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
+
+    (async () => {
+      try {
+        const [patientsData, alertsData] = await Promise.all([
+          apiFetch('/patients'),
+          apiFetch('/alerts'),
+        ]);
+
+        const patients = patientsData.patients || [];
+        document.getElementById('statPatients').textContent = patients.length;
+
+        const alerts = alertsData.alerts || [];
+        document.getElementById('statOpenAlerts').textContent = alerts.length;
+        const badge = document.getElementById('alertBadge');
+        if(badge && alerts.length > 0){ badge.textContent = alerts.length; badge.style.display = 'inline-block'; }
+        document.getElementById('statCritical').textContent = alerts.filter(a => a.severity === 'critical').length;
+        document.getElementById('statHigh').textContent = alerts.filter(a => a.severity === 'high').length;
+        document.getElementById('snapshotDesc').textContent = 'Your assigned patients and open alerts at a glance.';
+
+        const adherenceTbody = document.getElementById('adherenceTableBody');
+        const adherenceDesc = document.getElementById('adherenceDesc');
+        const batchSize = 5;
+        const adherenceRows = [];
+        for (let i = 0; i < patients.length; i += batchSize) {
+          const batch = patients.slice(i, i + batchSize);
+          const results = await Promise.allSettled(
+            batch.map(p => apiFetch(`/reports/patient/${p.id}`))
+          );
+          for (const result of results) {
+            if (result.status === 'fulfilled' && result.value?.report?.latest_adherence) {
+              const p = result.value.report.patient;
+              const la = result.value.report.latest_adherence;
+              adherenceRows.push({ patient: p, adherence: la });
+            }
+          }
+        }
+        const missed = adherenceRows.filter(r => !r.adherence.taken);
+        const taken = adherenceRows.filter(r => r.adherence.taken);
+        const sorted = [...missed, ...taken];
+        if (sorted.length === 0) {
+          adherenceTbody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center;padding:24px;">No adherence records yet.</td></tr>';
+        } else {
+          adherenceTbody.innerHTML = sorted.map(r => `
+            <tr>
+              <td><a href="/nurse/patient-detail.html?id=${r.patient.id}">${r.patient.full_name}</a></td>
+              <td>${r.patient.tb_number}</td>
+              <td>${new Date(r.adherence.taken_time).toLocaleDateString()}</td>
+              <td><span class="badge ${r.adherence.taken ? 'badge-success' : 'badge-danger'}">${r.adherence.taken ? 'Taken' : 'Missed'}</span></td>
+              <td><a class="btn" href="/nurse/patient-detail.html?id=${r.patient.id}">View</a></td>
+            </tr>
+          `).join('');
+        }
+        const missedCount = missed.length;
+        const totalCount = sorted.length;
+        adherenceDesc.textContent = missedCount > 0
+          ? `${missedCount} of ${totalCount} patients missed their last dose.`
+          : `All ${totalCount} patients took their last dose.`;
+      } catch(e) {
+        document.getElementById('snapshotDesc').textContent = 'Could not load stats: ' + e.message;
+        document.getElementById('adherenceTableBody').innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center;padding:24px;">Error: ${e.message}</td></tr>`;
+      }
+    })();
+
+    wsConnectAlerts((alert) => {
+      showToast(alert.message || 'New alert received', 'warning');
+    });
   </script>
+
 </body>
 </html>
-
-

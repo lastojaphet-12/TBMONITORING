@@ -3,66 +3,138 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Monitoring</title>
+  <title>Patient Monitoring - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="row" style="align-items:center;justify-content:space-between;">
-        <h1>Monitoring</h1>
-        <a class="btn" href="/nurse/dashboard.html">Back</a>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/nurse/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/nurse/dashboard.html">Dashboard</a>
+        <a href="/nurse/monitoring.html" class="active">Monitoring</a>
+        <a href="/nurse/alerts.html">Alerts<span class="alert-badge" id="alertBadge" style="display:none">0</span></a>
+        <a href="/nurse/reports.html">Reports</a>
+        <a href="/nurse/chat.html">Chat</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
       </div>
-      <div id="notice" class="notice" style="display:none;margin-top:12px;"></div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>Patient Monitoring</h1>
+      <a class="btn" href="/nurse/dashboard.html">Back to Dashboard</a>
     </div>
 
-    <div class="two-col" style="margin-top:14px;">
-      <div class="card">
-        <h2>Patients</h2>
+    <div id="notice" class="notice" style="display:none;margin-bottom:16px;"></div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="flex:1;min-width:200px;">
+          <input id="searchInput" type="text" placeholder="Search by name, TB number, or district..." style="margin:0;" />
+        </div>
+        <span class="muted" id="patientCount"></span>
+      </div>
+
+      <div style="overflow-x:auto;">
         <table class="table">
           <thead>
             <tr>
               <th>TB Number</th>
               <th>Name</th>
               <th>District</th>
+              <th>Actions</th>
             </tr>
           </thead>
-            <tbody id="patientTableBody">
-              <tr><td colspan="3" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
-            </tbody>
+          <tbody id="patientTableBody">
+            <tr><td colspan="4" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
+          </tbody>
         </table>
       </div>
+    </div>
 
-      <div class="card">
-        <h2>Open Alerts</h2>
+    <div class="card">
+      <h2>Open Alerts</h2>
+      <div style="overflow-x:auto;">
         <table class="table">
           <thead>
             <tr>
               <th>Patient</th>
               <th>Type</th>
               <th>Severity</th>
+              <th>Message</th>
+              <th>Date</th>
               <th>Action</th>
             </tr>
           </thead>
-            <tbody id="alertTableBody">
-              <tr><td colspan="4" class="loading-row"><div class="spinner"></div>Loading alerts...</td></tr>
-            </tbody>
+          <tbody id="alertTableBody">
+            <tr><td colspan="6" class="loading-row"><div class="spinner"></div>Loading alerts...</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
   <script type="module">
-    import { apiFetch, getUserRole, showToast, wsConnectAlerts } from '/assets/js/api.js';
+    import { apiFetch, getUserRole, clearToken, showToast, wsConnectAlerts } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
 
     const role = getUserRole();
     if(role && role !== 'nurse') location.href = '/'+role+'/dashboard.html';
 
-    // Subscribe to real-time alert notifications
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
+
     wsConnectAlerts((alert) => {
       showToast(`New ${alert.severity} alert: ${alert.message}`, alert.severity === 'critical' || alert.severity === 'high' ? 'error' : 'warning', 6000);
       loadData();
     });
+
+    let allPatients = [];
+
+    function renderPatients(filter = ''){
+      const q = filter.toLowerCase();
+      const filtered = q ? allPatients.filter(p =>
+        (p.full_name || '').toLowerCase().includes(q) ||
+        (p.tb_number || '').toLowerCase().includes(q) ||
+        (p.district || '').toLowerCase().includes(q)
+      ) : allPatients;
+
+      document.getElementById('patientCount').textContent = `${filtered.length} of ${allPatients.length} patients`;
+
+      document.getElementById('patientTableBody').innerHTML = filtered.length
+        ? filtered.map(p => `
+          <tr>
+            <td>${p.tb_number}</td>
+            <td><a href="/nurse/patient-detail.html?id=${p.id}" style="font-weight:500">${p.full_name}</a></td>
+            <td>${p.district || '-'}</td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <a class="btn" href="/nurse/patient-detail.html?id=${p.id}">View</a>
+                <a class="btn" href="/nurse/reports.html?id=${p.id}">Report</a>
+              </div>
+            </td>
+          </tr>
+        `).join('')
+        : '<tr><td colspan="4" class="muted" style="text-align:center;padding:24px;">No patients match your search.</td></tr>';
+    }
 
     async function loadData(){
       const notice = document.getElementById('notice');
@@ -73,28 +145,26 @@
           apiFetch('/alerts'),
         ]);
 
-        const patients = patientsData.patients || [];
-        document.getElementById('patientTableBody').innerHTML = patients.length
-          ? patients.map(p => `
-            <tr>
-              <td>${p.tb_number}</td>
-              <td>${p.full_name}</td>
-              <td>${p.district || '-'}</td>
-            </tr>
-          `).join('')
-          : '<tr><td colspan="3" class="muted">No patients registered.</td></tr>';
+        const badge = document.getElementById('alertBadge');
+        const alertCount = (alertsData.alerts || []).length;
+        if(badge && alertCount > 0){ badge.textContent = alertCount; badge.style.display = 'inline-block'; }
+
+        allPatients = patientsData.patients || [];
+        renderPatients(document.getElementById('searchInput').value);
 
         const alerts = alertsData.alerts || [];
         document.getElementById('alertTableBody').innerHTML = alerts.length
           ? alerts.map(a => `
             <tr>
-              <td>#${a.patient_id}</td>
+              <td><a href="/nurse/patient-detail.html?id=${a.patient_id}">#${a.patient_id}</a></td>
               <td>${a.alert_type}</td>
               <td><span class="badge ${a.severity === 'critical' || a.severity === 'high' ? 'badge-danger' : 'badge-warning'}">${a.severity}</span></td>
+              <td>${a.message || '-'}</td>
+              <td>${a.created_at ? new Date(a.created_at).toLocaleDateString() : '-'}</td>
               <td><button class="btn btn-success btn-resolve" data-id="${a.id}" type="button">Resolve</button></td>
             </tr>
           `).join('')
-          : '<tr><td colspan="4" class="muted">No open alerts.</td></tr>';
+          : '<tr><td colspan="6" class="muted" style="text-align:center;padding:24px;">No open alerts.</td></tr>';
 
         document.querySelectorAll('.btn-resolve').forEach(btn => {
           btn.addEventListener('click', async () => {
@@ -110,13 +180,17 @@
           });
         });
       }catch(e){
-        document.getElementById('patientTableBody').innerHTML = `<tr><td colspan="3" class="muted">Error: ${e.message}</td></tr>`;
-        document.getElementById('alertTableBody').innerHTML = `<tr><td colspan="4" class="muted">Error: ${e.message}</td></tr>`;
+        document.getElementById('patientTableBody').innerHTML = `<tr><td colspan="4" class="muted">Error: ${e.message}</td></tr>`;
+        document.getElementById('alertTableBody').innerHTML = `<tr><td colspan="6" class="muted">Error: ${e.message}</td></tr>`;
       }
     }
 
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      renderPatients(e.target.value);
+    });
+
     loadData();
   </script>
+
 </body>
 </html>
-

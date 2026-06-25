@@ -3,38 +3,79 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alerts</title>
+  <title>Alerts - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/nurse/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/nurse/dashboard.html">Dashboard</a>
+        <a href="/nurse/monitoring.html">Monitoring</a>
+        <a href="/nurse/alerts.html" class="active">Alerts<span class="alert-badge" id="alertBadge" style="display:none">0</span></a>
+        <a href="/nurse/reports.html">Reports</a>
+        <a href="/nurse/chat.html">Chat</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
       <h1>Alerts</h1>
-      <p class="muted">Calls <code>GET /api/alerts</code> and <code>POST /api/alerts/{alert_id}/resolve</code> (stubbed backend)</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn btn-primary" id="btnRefresh" type="button">Refresh</button>
-        <a class="btn" href="/nurse/dashboard.html">Back</a>
+        <a class="btn" href="/nurse/dashboard.html">Back to Dashboard</a>
       </div>
-      <div id="notice" class="notice" style="display:none;margin-top:12px;"></div>
+    </div>
 
-      <div style="margin-top:14px;">
-        <table class="table">
-          <thead>
-            <tr><th>ID</th><th>Status</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
+    <div id="notice" class="notice" style="display:none;margin-bottom:16px;"></div>
 
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Patient</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Message</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
     </div>
   </div>
 
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
   <script type="module">
-    import { apiFetch, getUserRole } from '/assets/js/api.js';
+    import { apiFetch, getUserRole, clearToken, showToast, wsConnectAlerts } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
 
     if(getUserRole() !== 'nurse' && getUserRole() !== 'provider'){
       location.href = '/login.html';
     }
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn')?.addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
 
     const rows = document.getElementById('rows');
     const notice = document.getElementById('notice');
@@ -45,42 +86,56 @@
       notice.textContent = msg;
     };
 
-    const load = async ()=>{
-      rows.innerHTML='';
+    const load = async () => {
+      rows.innerHTML = '';
       try{
         notice.style.display='none';
         const data = await apiFetch('/alerts');
+        const badge = document.getElementById('alertBadge');
+        const count = (data.alerts || []).length;
+        if(badge && count > 0){ badge.textContent = count; badge.style.display = 'inline-block'; }
+        else if(badge){ badge.style.display = 'none'; }
         const alerts = data.alerts || [];
-        if(alerts.length===0){
-          rows.innerHTML = `<tr><td colspan="3" class="muted">No alerts (or backend stub).</td></tr>`;
+        if(alerts.length === 0){
+          rows.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:24px;">No open alerts. All clear!</td></tr>';
           return;
         }
         for(const a of alerts){
           const tr = document.createElement('tr');
+          const severityBadge = a.severity === 'critical' || a.severity === 'high' ? 'badge-danger' : 'badge-warning';
           tr.innerHTML = `
             <td>${a.id ?? ''}</td>
-            <td>${a.status ?? ''}</td>
-            <td>
-              <button class="btn" type="button" data-id="${a.id}">Resolve</button>
-            </td>
+            <td>#${a.patient_id}</td>
+            <td>${a.alert_type}</td>
+            <td><span class="badge ${severityBadge}">${a.severity}</span></td>
+            <td>${a.message || '-'}</td>
+            <td>${a.created_at ? new Date(a.created_at).toLocaleDateString() : '-'}</td>
+            <td><button class="btn btn-success btn-resolve" type="button" data-id="${a.id}">Resolve</button></td>
           `;
-          tr.querySelector('button').addEventListener('click', async ()=>{
+          tr.querySelector('.btn-resolve').addEventListener('click', async () => {
             try{
               await apiFetch(`/alerts/${a.id}/resolve`, { method:'POST', body:{} });
-              show('Resolved. Refreshing...','success');
+              show('Alert resolved. Refreshing...','success');
               await load();
-            }catch(e){ show(e.message||'Resolve failed'); }
+            }catch(e){
+              show(e.message || 'Resolve failed');
+            }
           });
           rows.appendChild(tr);
         }
       }catch(e){
-        show(e.message||'Failed to load alerts');
+        show(e.message || 'Failed to load alerts');
       }
     };
 
     document.getElementById('btnRefresh').addEventListener('click', load);
     load();
+
+    wsConnectAlerts((alert) => {
+      showToast(alert.message || 'New alert received', alert.severity === 'critical' || alert.severity === 'high' ? 'error' : 'warning');
+      load();
+    });
   </script>
+
 </body>
 </html>
-
