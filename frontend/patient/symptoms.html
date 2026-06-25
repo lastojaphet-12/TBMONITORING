@@ -3,74 +3,121 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Submit Symptoms</title>
+  <title>Report Symptoms - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/patient/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/patient/dashboard.html">Dashboard</a>
+        <a href="/patient/symptoms.html" class="active">Symptoms</a>
+        <a href="/patient/medication.html">Medication</a>
+        <a href="/patient/progress.html">Progress</a>
+        <a href="/patient/notifications.html">Alerts</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>Report Symptoms</h1>
+      <a class="btn" href="/patient/dashboard.html">Back to Dashboard</a>
+    </div>
+
     <div class="card">
-      <h1>Submit Symptoms</h1>
-      <p class="muted">Calls <code>POST /api/symptoms/report</code></p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div class="feature-card-icon">
+          <img src="/assets/images/icon-symptoms.svg" alt="Symptoms" width="32" height="32" />
+        </div>
+        <div>
+          <h2 style="margin:0">How are you feeling today?</h2>
+          <p class="muted" style="margin:4px 0 0">Fill in your symptoms below and submit the report.</p>
+        </div>
+      </div>
 
       <div id="notice" class="notice" style="display:none"></div>
 
-      <label for="patient_id">Patient ID</label>
-      <input id="patient_id" type="number" placeholder="e.g., 1" />
+      <label for="patient_id">Patient ID <span class="muted">(auto-filled)</span></label>
+      <input id="patient_id" type="number" readonly />
 
-      <label for="cough_duration">Cough duration (days, optional)</label>
-      <input id="cough_duration" type="number" />
-
-      <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="blood_in_sputum" /> Blood in sputum</label>
+      <div class="grid-2">
+        <div>
+          <label for="cough_duration">Cough duration (days)</label>
+          <input id="cough_duration" type="number" placeholder="e.g., 5" />
         </div>
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="chest_pain" /> Chest pain</label>
+        <div>
+          <label for="weight_loss">Weight loss (%)</label>
+          <input id="weight_loss" type="number" step="0.1" placeholder="e.g., 2.5" />
         </div>
       </div>
 
-      <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="fever" /> Fever</label>
-        </div>
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="night_sweats" /> Night sweats</label>
-        </div>
+      <label style="margin-top:18px;">Symptoms <span class="muted">(check all that apply)</span></label>
+      <div class="checkbox-grid">
+        <label class="cb-label">
+          <input type="checkbox" id="blood_in_sputum" /> Blood in sputum
+        </label>
+        <label class="cb-label">
+          <input type="checkbox" id="chest_pain" /> Chest pain
+        </label>
+        <label class="cb-label">
+          <input type="checkbox" id="fever" /> Fever
+        </label>
+        <label class="cb-label">
+          <input type="checkbox" id="night_sweats" /> Night sweats
+        </label>
+        <label class="cb-label">
+          <input type="checkbox" id="fatigue" /> Fatigue
+        </label>
+        <label class="cb-label">
+          <input type="checkbox" id="breathing_difficulty" /> Breathing difficulty
+        </label>
       </div>
 
-      <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="fatigue" /> Fatigue</label>
-        </div>
-        <div style="flex:1;min-width:220px;">
-          <label for="weight_loss">Weight loss % (optional)</label>
-          <input id="weight_loss" type="number" step="0.1" />
-        </div>
-      </div>
-
-      <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label><input type="checkbox" id="breathing_difficulty" /> Breathing difficulty</label>
-        </div>
-        <div style="flex:1;min-width:220px;">
+      <div class="grid-2" style="margin-top:8px;">
+        <div>
           <label for="oxygen_saturation">Oxygen saturation (%)</label>
           <input id="oxygen_saturation" type="number" step="0.1" value="98" />
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnSubmit" type="button">Submit report</button>
-        <a class="btn" href="/patient/dashboard.html">Back</a>
+      <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnSubmit" type="button">Submit Report</button>
+        <a class="btn" href="/patient/dashboard.html">Cancel</a>
       </div>
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
   <script type="module">
-    import { apiFetch, getUserRole } from '/assets/js/api.js';
+    import { apiFetch, getUserRole, clearToken } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
 
     if(getUserRole() !== 'patient' && getUserRole() !== 'nurse'){
       location.href = '/login.html';
     }
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
 
     const notice = document.getElementById('notice');
     const show = (msg, kind='error') => {
@@ -78,6 +125,21 @@
       notice.className = `notice ${kind}`;
       notice.textContent = msg;
     };
+
+    (async () => {
+      notice.style.display = 'block';
+      notice.className = 'notice';
+      notice.innerHTML = '<div class="spinner"></div> Loading your patient record...';
+      try {
+        const myPatient = await apiFetch('/patients/my-patient');
+        document.getElementById('patient_id').value = myPatient.patient.id;
+        notice.style.display = 'none';
+      } catch(e) {
+        notice.style.display='block';
+        notice.className = 'notice error';
+        notice.textContent = 'Could not auto-detect your patient record: ' + e.message;
+      }
+    })();
 
     document.getElementById('btnSubmit').addEventListener('click', async ()=>{
       const patient_id = Number(document.getElementById('patient_id').value);
@@ -99,8 +161,7 @@
       try{
         notice.style.display='none';
         const res = await apiFetch('/symptoms/report', { method:'POST', body:payload });
-
-        show(`Submitted. Response: ${JSON.stringify(res)}`,'success');
+        show('Symptoms reported successfully!','success');
       }catch(e){
         show(e.message||'Submit failed');
       }
@@ -108,4 +169,3 @@
   </script>
 </body>
 </html>
-

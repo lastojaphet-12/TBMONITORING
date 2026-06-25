@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.database.postgres import SessionLocal
-from backend.main_dependencies import require_role
-from backend.models.clinic_models import Alert, AlertStatus
+from backend.main_dependencies import get_current_user_payload, require_role
+from backend.models.clinic_models import Alert, AlertStatus, Patient
 
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -20,14 +20,20 @@ def get_db() -> Session:
         db.close()
 
 
-@router.get("", dependencies=[Depends(require_role("nurse", "provider"))])
-def list_alerts(db: Session = Depends(get_db)):
-    stmt = (
-        select(Alert)
-        .where(Alert.status == AlertStatus.open)
-        .order_by(Alert.created_at.desc())
-        .limit(200)
-    )
+@router.get("", dependencies=[Depends(require_role("nurse", "provider", "patient"))])
+def list_alerts(payload=Depends(get_current_user_payload), db: Session = Depends(get_db)):
+    role = payload.get("role")
+    stmt = select(Alert).where(Alert.status == AlertStatus.open)
+
+    if role == "patient":
+        user_id = int(payload.get("sub"))
+        patient = db.execute(select(Patient).where(Patient.user_id == user_id)).scalar_one_or_none()
+        if patient:
+            stmt = stmt.where(Alert.patient_id == patient.id)
+        else:
+            return {"alerts": []}
+
+    stmt = stmt.order_by(Alert.created_at.desc()).limit(200)
     alerts = list(db.scalars(stmt).all())
 
     return {

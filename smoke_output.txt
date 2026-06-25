@@ -1,0 +1,41 @@
+
+=== Health ===
+  PASS: /health
+
+=== Register ===
+  FAIL: register provider
+    status=409
+  FAIL: register nurse
+    status=409
+  FAIL: register patient
+    status=409
+
+=== Login ===
+  PASS: login provider
+
+=== Me ===
+  PASS: /me
+
+=== Create Patient ===
+  FAIL: create patient
+    status=200
+
+=== Submit Symptoms ===
+  FAIL: submit symptoms
+    status=403
+
+=== Adherence Update ===
+  FAIL: adherence update
+    status=422
+
+=== Alerts ===
+  FAIL: list alerts
+    status=200
+    alert count: 0
+
+=== Patient Report ===
+  FAIL: patient report
+    status=422
+
+========================================
+Passed: 3, Failed: 8

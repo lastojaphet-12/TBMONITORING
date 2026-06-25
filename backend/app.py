@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from backend.api import auth, patients, symptoms, adherence, alerts, reports
 from backend.database.postgres import init_db
+from backend.database.seed_data import seed_default_users
 from backend.websocket.chat import router as chat_router
 
 app = FastAPI(title="Digital Chronic TB Remote Monitoring System")
@@ -16,6 +17,7 @@ def health_check():
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    seed_default_users()
 
 
 # API Routers

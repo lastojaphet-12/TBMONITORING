@@ -5,7 +5,7 @@ from backend.main_dependencies import require_role
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.get("/patient/{patient_id}", dependencies=[Depends(require_role("nurse", "provider"))])
+@router.get("/patient/{patient_id}", dependencies=[Depends(require_role("nurse", "provider", "patient"))])
 def patient_report(patient_id: int):
     from datetime import datetime
 

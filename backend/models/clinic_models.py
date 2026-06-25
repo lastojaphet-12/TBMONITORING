@@ -40,11 +40,13 @@ class Patient(Base):
     district: Mapped[str | None] = mapped_column(String(120), nullable=True)
     village: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), unique=True, nullable=True, index=True)
     provider_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     nurse_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
+    user: Mapped[User | None] = relationship("User", foreign_keys=[user_id])
     provider: Mapped[User | None] = relationship("User", foreign_keys=[provider_id])
     nurse: Mapped[User | None] = relationship("User", foreign_keys=[nurse_id])
 
@@ -222,18 +224,6 @@ class Reminder(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-
-class PasswordResetToken(Base):
-    __tablename__ = "password_reset_tokens"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-
-    token_hash: Mapped[str] = mapped_column(String(255), index=True, unique=True)
-    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
-    used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class UserSettings(Base):

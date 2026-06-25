@@ -9,14 +9,114 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>Monitoring</h1>
-      <p class="muted">Frontend placeholder for showing monitoring metrics from InfluxDB (reference build).</p>
-      <a class="btn" href="/nurse/dashboard.html">Back</a>
-      <div id="notice" class="notice warning" style="display:none;margin-top:12px;"></div>
+      <div class="row" style="align-items:center;justify-content:space-between;">
+        <h1>Monitoring</h1>
+        <a class="btn" href="/nurse/dashboard.html">Back</a>
+      </div>
+      <div id="notice" class="notice" style="display:none;margin-top:12px;"></div>
+    </div>
 
+    <div class="two-col" style="margin-top:14px;">
+      <div class="card">
+        <h2>Patients</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>TB Number</th>
+              <th>Name</th>
+              <th>District</th>
+            </tr>
+          </thead>
+            <tbody id="patientTableBody">
+              <tr><td colspan="3" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
+            </tbody>
+        </table>
+      </div>
 
+      <div class="card">
+        <h2>Open Alerts</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+            <tbody id="alertTableBody">
+              <tr><td colspan="4" class="loading-row"><div class="spinner"></div>Loading alerts...</td></tr>
+            </tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <script type="module">
+    import { apiFetch, getUserRole, showToast, wsConnectAlerts } from '/assets/js/api.js';
+
+    const role = getUserRole();
+    if(role && role !== 'nurse') location.href = '/'+role+'/dashboard.html';
+
+    // Subscribe to real-time alert notifications
+    wsConnectAlerts((alert) => {
+      showToast(`New ${alert.severity} alert: ${alert.message}`, alert.severity === 'critical' || alert.severity === 'high' ? 'error' : 'warning', 6000);
+      loadData();
+    });
+
+    async function loadData(){
+      const notice = document.getElementById('notice');
+
+      try{
+        const [patientsData, alertsData] = await Promise.all([
+          apiFetch('/patients'),
+          apiFetch('/alerts'),
+        ]);
+
+        const patients = patientsData.patients || [];
+        document.getElementById('patientTableBody').innerHTML = patients.length
+          ? patients.map(p => `
+            <tr>
+              <td>${p.tb_number}</td>
+              <td>${p.full_name}</td>
+              <td>${p.district || '-'}</td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="3" class="muted">No patients registered.</td></tr>';
+
+        const alerts = alertsData.alerts || [];
+        document.getElementById('alertTableBody').innerHTML = alerts.length
+          ? alerts.map(a => `
+            <tr>
+              <td>#${a.patient_id}</td>
+              <td>${a.alert_type}</td>
+              <td><span class="badge ${a.severity === 'critical' || a.severity === 'high' ? 'badge-danger' : 'badge-warning'}">${a.severity}</span></td>
+              <td><button class="btn btn-success btn-resolve" data-id="${a.id}" type="button">Resolve</button></td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="4" class="muted">No open alerts.</td></tr>';
+
+        document.querySelectorAll('.btn-resolve').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const alertId = btn.dataset.id;
+            try{
+              await apiFetch(`/alerts/${alertId}/resolve`, { method: 'POST' });
+              loadData();
+            }catch(e){
+              notice.style.display='block';
+              notice.className = 'notice error';
+              notice.textContent = e.message;
+            }
+          });
+        });
+      }catch(e){
+        document.getElementById('patientTableBody').innerHTML = `<tr><td colspan="3" class="muted">Error: ${e.message}</td></tr>`;
+        document.getElementById('alertTableBody').innerHTML = `<tr><td colspan="4" class="muted">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    loadData();
+  </script>
 </body>
 </html>
 

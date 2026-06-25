@@ -70,6 +70,31 @@ export async function apiFetch(path, {method='GET', body=null, headers={}, token
 }
 
 
+export function showToast(message, type='info', duration=4000){
+  let container = document.querySelector('.toast-container');
+  if(!container){
+    container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(()=>{
+    el.style.animation = 'toastOut .3s ease forwards';
+    setTimeout(()=>el.remove(), 300);
+  }, duration);
+}
+
+export function renderLoadingRow(colspan, message='Loading...'){
+  return `<tr><td colspan="${colspan}" class="loading-row"><div class="spinner"></div>${message}</td></tr>`;
+}
+
+export function renderSpinner(message='Loading...'){
+  return `<div style="text-align:center;padding:24px;"><div class="spinner spinner-lg"></div><div class="muted">${message}</div></div>`;
+}
+
 export async function wsConnect(onMessage){
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${location.host}${API_BASE}/ws/chat`);
@@ -79,6 +104,21 @@ export async function wsConnect(onMessage){
     }catch{
       onMessage(e.data);
     }
+  };
+  return ws;
+}
+
+export function wsConnectAlerts(onAlert){
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}${API_BASE}/ws/alerts`);
+  ws.onmessage = (e)=>{
+    try{
+      const data = JSON.parse(e.data);
+      if(data.type === 'new_alert') onAlert(data.alert);
+    }catch{ /* ignore */ }
+  };
+  ws.onclose = ()=>{
+    setTimeout(()=>wsConnectAlerts(onAlert), 3000);
   };
   return ws;
 }

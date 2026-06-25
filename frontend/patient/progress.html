@@ -3,17 +3,144 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Progress</title>
+  <title>Progress - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>Progress</h1>
-      <p class="muted">Placeholder for trends from InfluxDB (no backend endpoint implemented yet).</p>
-      <a class="btn" href="/patient/dashboard.html">Back</a>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/patient/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/patient/dashboard.html">Dashboard</a>
+        <a href="/patient/symptoms.html">Symptoms</a>
+        <a href="/patient/medication.html">Medication</a>
+        <a href="/patient/progress.html" class="active">Progress</a>
+        <a href="/patient/notifications.html">Alerts</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>Treatment Progress</h1>
+      <a class="btn" href="/patient/dashboard.html">Back to Dashboard</a>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h2>Risk Snapshot</h2>
+      <div id="riskSection" class="muted" style="display:flex;align-items:center;gap:8px;">Loading...</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <h2>Symptom History</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Cough (days)</th>
+              <th>Blood</th>
+              <th>O2 Sat</th>
+            </tr>
+          </thead>
+          <tbody id="symptomTableBody">
+            <tr><td colspan="4" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Adherence History</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Taken</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="adherenceTableBody">
+            <tr><td colspan="3" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
+  <script type="module">
+    import { apiFetch, getUserRole, clearToken } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
+
+    if(getUserRole() !== 'patient') location.href = '/login.html';
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
+
+    (async () => {
+      try {
+        const myPatient = await apiFetch('/patients/my-patient');
+        const patientId = myPatient.patient.id;
+
+        document.getElementById('riskSection').innerHTML = '<div class="spinner"></div> Loading risk data...';
+        document.getElementById('symptomTableBody').innerHTML = '<tr><td colspan="4" class="loading-row"><div class="spinner"></div>Loading symptoms...</td></tr>';
+        document.getElementById('adherenceTableBody').innerHTML = '<tr><td colspan="3" class="loading-row"><div class="spinner"></div>Loading adherence...</td></tr>';
+
+        const [reportData, symptomsData, adherenceData] = await Promise.all([
+          apiFetch(`/reports/patient/${patientId}`),
+          apiFetch(`/symptoms/history/${patientId}`),
+          apiFetch(`/adherence/history/${patientId}`),
+        ]);
+
+        const risk = reportData.report?.risk_snapshot;
+        document.getElementById('riskSection').innerHTML = risk
+          ? `<span class="badge ${risk.risk_level === 'Critical' || risk.risk_level === 'High Risk' ? 'badge-danger' : 'badge-warning'}" style="font-size:1rem;padding:8px 16px;">${risk.risk_level}</span> <span style="color:var(--text-muted)">Score: <strong>${risk.risk_score}</strong></span>`
+          : '<span class="muted">No risk data yet. Submit symptoms to generate a risk score.</span>';
+
+        const symptoms = symptomsData.symptoms || [];
+        document.getElementById('symptomTableBody').innerHTML = symptoms.length
+          ? symptoms.map(s => `
+            <tr>
+              <td>${new Date(s.created_at).toLocaleDateString()}</td>
+              <td>${s.cough_duration ?? '-'}</td>
+              <td>${s.blood_in_sputum ? 'Yes' : 'No'}</td>
+              <td>${s.oxygen_saturation ?? '-'}</td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="4" class="muted">No symptom reports yet.</td></tr>';
+
+        const adherence = adherenceData.adherence || [];
+        document.getElementById('adherenceTableBody').innerHTML = adherence.length
+          ? adherence.map(a => `
+            <tr>
+              <td>${new Date(a.taken_time).toLocaleDateString()}</td>
+              <td><span class="badge ${a.taken ? 'badge-success' : 'badge-danger'}">${a.taken ? 'Yes' : 'No'}</span></td>
+              <td>${a.remarks || '-'}</td>
+            </tr>
+          `).join('')
+          : '<tr><td colspan="3" class="muted">No adherence records yet.</td></tr>';
+      }catch(e){
+        document.getElementById('riskSection').innerHTML = `<span class="muted">Error: ${e.message}</span>`;
+      }
+    })();
+  </script>
 </body>
 </html>
-

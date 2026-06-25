@@ -9,6 +9,12 @@ services:
       - "5433:5432"
     volumes:
       - tb_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lastone -d tbmonitoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   influxdb:
     image: influxdb:2.7
@@ -22,7 +28,7 @@ services:
       context: .
       dockerfile: docker/backend/Dockerfile
     environment:
-      DATABASE_URL: postgresql+psycopg://lastone:lastone@123@postgres:5432/tbmonitoring
+      DATABASE_URL: postgresql+psycopg://lastone:lastone%40123@postgres:5432/tbmonitoring
       INFLUX_URL: http://influxdb:8086
       INFLUX_TOKEN: changeme
       INFLUX_ORG: tb
@@ -32,8 +38,10 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - influxdb
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
 
 
   nginx:

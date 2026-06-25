@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, select
 
 from backend.database.postgres import SessionLocal
+from backend.influxdb.influx_client import InfluxClient
 from backend.main_dependencies import require_role
 from backend.models.clinic_models import (
     Alert,
@@ -17,6 +19,10 @@ from backend.models.clinic_models import (
 )
 from backend.services.alert_service import critical_tb_alert
 from backend.services.risk_engine import compute_risk
+from backend.websocket.manager import broadcast_alert_sync
+
+logger = logging.getLogger(__name__)
+influx = InfluxClient()
 
 router = APIRouter(prefix="/symptoms", tags=["symptoms"])
 
@@ -27,6 +33,34 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
+
+
+@router.get("/history/{patient_id}", dependencies=[Depends(require_role("patient", "nurse", "provider"))])
+def symptom_history(patient_id: int, db: Session = Depends(get_db)):
+    reports = db.scalars(
+        select(SymptomReportModel)
+        .where(SymptomReportModel.patient_id == patient_id)
+        .order_by(desc(SymptomReportModel.created_at))
+        .limit(50)
+    ).all()
+    return {
+        "symptoms": [
+            {
+                "id": r.id,
+                "cough_duration": r.cough_duration,
+                "blood_in_sputum": r.blood_in_sputum,
+                "chest_pain": r.chest_pain,
+                "fever": r.fever,
+                "night_sweats": r.night_sweats,
+                "fatigue": r.fatigue,
+                "weight_loss": r.weight_loss,
+                "breathing_difficulty": r.breathing_difficulty,
+                "oxygen_saturation": r.oxygen_saturation,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in reports
+        ]
+    }
 
 
 class SymptomReport(BaseModel):
@@ -97,7 +131,7 @@ def adherence_score_latest(db: Session, patient_id: int) -> int:
     return 100 if row.taken else 0
 
 
-@router.post("/report", dependencies=[Depends(require_role("patient", "nurse"))])
+@router.post("/report", dependencies=[Depends(require_role("patient", "nurse", "provider"))])
 def submit_symptoms(payload: SymptomReport, db: Session = Depends(get_db)):
     patient = db.get(Patient, payload.patient_id)
     if not patient:
@@ -124,6 +158,21 @@ def submit_symptoms(payload: SymptomReport, db: Session = Depends(get_db)):
     symptom_score = symptom_score_from_payload(payload)
     adherence_score = adherence_score_latest(db, payload.patient_id)
     risk = compute_risk(symptom_score=symptom_score, adherence_score=adherence_score)
+
+    # Write monitoring data to InfluxDB (fire-and-forget, ignore errors)
+    try:
+        influx.write_monitoring_point(
+            patient_id=str(payload.patient_id),
+            nurse_id=str(patient.nurse_id) if patient.nurse_id else None,
+            district=patient.district,
+            village=patient.village,
+            oxygen_level=payload.oxygen_saturation,
+            symptom_score=symptom_score,
+            risk_score=risk.risk_score,
+            adherence_score=adherence_score,
+        )
+    except Exception:
+        logger.warning("InfluxDB write failed", exc_info=True)
 
     created_alerts: list[Alert] = []
 
@@ -161,6 +210,26 @@ def submit_symptoms(payload: SymptomReport, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(alert)
         created_alerts.append(alert)
+
+    # Broadcast new alerts to connected nurses via WebSocket
+    if created_alerts:
+        for a in created_alerts:
+            try:
+                broadcast_alert_sync(
+                    {
+                        "type": "new_alert",
+                        "alert": {
+                            "id": a.id,
+                            "patient_id": a.patient_id,
+                            "alert_type": a.alert_type.value,
+                            "severity": a.severity,
+                            "message": a.message,
+                            "status": a.status.value,
+                        },
+                    }
+                )
+            except Exception:
+                logger.warning("WebSocket broadcast failed", exc_info=True)
 
     return {
         "saved": True,

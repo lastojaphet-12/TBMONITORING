@@ -9,17 +9,101 @@
 <body>
   <div class="container">
     <div class="card">
-      <h1>Patient List</h1>
-      <p class="muted">Provider-only UI. Backend patient list endpoint is not implemented in this reference build.</p>
-      <a class="btn" href="/provider/dashboard.html">Back</a>
+      <div class="row" style="align-items:center;justify-content:space-between;">
+        <h1>Patient List</h1>
+        <a class="btn" href="/provider/dashboard.html">Back</a>
+      </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { getUserRole } from '/assets/js/api.js';
-    const role = getUserRole();
-    if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
-  </script>
+    <div class="card" style="margin-top:14px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>TB Number</th>
+            <th>Full Name</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>District</th>
+            <th>Village</th>
+            <th>Phone</th>
+          </tr>
+        </thead>
+          <tbody id="patientTableBody">
+            <tr><td colspan="7" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
+          </tbody>
+        </table>
+        <div id="pagination" class="row" style="justify-content:center;align-items:center;margin-top:16px;display:none;">
+          <button class="btn" id="prevPage" type="button">Previous</button>
+          <span id="pageInfo" class="muted" style="margin:0 12px;"></span>
+          <button class="btn" id="nextPage" type="button">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { getUserRole, apiFetch, showToast } from '/assets/js/api.js';
+
+      const role = getUserRole();
+      if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+
+      const PAGE_SIZE = 10;
+      let currentOffset = 0;
+      let totalPatients = 0;
+
+      async function loadPatients(){
+        const tbody = document.getElementById('patientTableBody');
+        try{
+          const data = await apiFetch(`/patients?limit=${PAGE_SIZE}&offset=${currentOffset}`);
+          const patients = data.patients;
+          totalPatients = data.total;
+          if(!patients || patients.length === 0){
+            tbody.innerHTML = '<tr><td colspan="7" class="muted">No patients registered yet.</td></tr>';
+            document.getElementById('pagination').style.display = 'none';
+            return;
+          }
+          tbody.innerHTML = patients.map(p => `
+            <tr>
+              <td>${p.tb_number}</td>
+              <td>${p.full_name}</td>
+              <td>${p.gender}</td>
+              <td>${p.date_of_birth}</td>
+              <td>${p.district || '-'}</td>
+              <td>${p.village || '-'}</td>
+              <td>${p.phone || '-'}</td>
+            </tr>
+          `).join('');
+          updatePagination();
+        }catch(err){
+          tbody.innerHTML = `<tr><td colspan="7" class="muted">Error: ${err.message}</td></tr>`;
+        }
+      }
+
+      function updatePagination(){
+        const totalPages = Math.ceil(totalPatients / PAGE_SIZE);
+        const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
+        const pagination = document.getElementById('pagination');
+        if(totalPages <= 1){
+          pagination.style.display = 'none';
+          return;
+        }
+        pagination.style.display = 'flex';
+        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${totalPatients} patients)`;
+        document.getElementById('prevPage').disabled = currentOffset === 0;
+        document.getElementById('nextPage').disabled = currentOffset + PAGE_SIZE >= totalPatients;
+      }
+
+      document.getElementById('prevPage').addEventListener('click', () => {
+        currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
+        loadPatients();
+      });
+
+      document.getElementById('nextPage').addEventListener('click', () => {
+        currentOffset = Math.min(totalPatients - 1, currentOffset + PAGE_SIZE);
+        loadPatients();
+      });
+
+      loadPatients();
+    </script>
 </body>
 </html>
 

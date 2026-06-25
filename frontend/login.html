@@ -1,51 +1,289 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TB Monitoring - Login</title>
+  <title>Digital TB Remote Monitoring System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4CAF4F',
+            'primary-dark': '#388E3C',
+            'accent-light': '#E8F5E9',
+            'text-dark': '#263238',
+            muted: '#717171',
+            'bg-offwhite': '#F5F7FA',
+            border: '#E0E0E0',
+            danger: '#E53935',
+            success: '#43A047',
+            warning: '#FB8C00',
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
-<body>
-  <div class="container page-center">
-    <div class="card login-card">
-      <h1>Login</h1>
-      <p class="muted">Sign in to access role-based pages.</p>
+<body class="bg-white text-text-dark antialiased">
 
-      <div id="notice" class="notice" style="display:none"></div>
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-border">
+    <div class="max-w-[1100px] mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 no-underline text-text-dark font-bold text-lg">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" class="h-8 w-8" />
+        <span>TB<span class="text-primary">Monitor</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-muted">
+        <a href="#hero" class="no-underline text-muted hover:text-primary transition-colors">Home</a>
+        <a href="#features" class="no-underline text-muted hover:text-primary transition-colors">Features</a>
+        <a href="#stats" class="no-underline text-muted hover:text-primary transition-colors">Impact</a>
+      </div>
+      <button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded text-sm font-medium border-0 cursor-pointer transition-colors" id="navLoginBtn" type="button">Login</button>
+    </div>
+  </nav>
 
-      <label for="username">Username</label>
-      <input id="username" autocomplete="username" value="" placeholder="e.g., lastone" />
+  <!-- Hero Section -->
+  <section class="bg-bg-offwhite pt-24 pb-16 md:pt-28 md:pb-20" id="hero">
+    <div class="max-w-[1100px] mx-auto px-6 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+      <div class="flex-1 text-center md:text-left">
+        <h1 class="text-3xl md:text-4xl font-bold text-text-dark leading-tight">
+          Lessons and insights<br />
+          <span class="text-primary">from 8 years of remote TB monitoring</span>
+        </h1>
+        <p class="text-muted mt-4 text-base leading-relaxed max-w-lg mx-auto md:mx-0">
+          A digital platform connecting patients, nurses, and healthcare providers
+          for effective tuberculosis treatment supervision and tracking.
+        </p>
+        <div class="mt-6">
+          <button class="bg-primary hover:bg-primary-dark text-white px-7 py-3 rounded text-base font-medium border-0 cursor-pointer transition-colors" id="heroLoginBtn" type="button">Get Started</button>
+        </div>
+      </div>
+      <div class="hidden md:block flex-1">
+        <img src="/assets/images/hero-illustration.webp" alt="Remote TB monitoring" class="w-full max-w-[500px] h-auto mx-auto" />
+      </div>
+    </div>
+  </section>
 
-      <label for="password">Password</label>
-      <input id="password" type="password" autocomplete="current-password" placeholder="e.g., lastone@123" value="" />
+  <!-- Client Logo Bar -->
+  <section class="py-8 border-y border-border">
+    <div class="max-w-[1100px] mx-auto px-6">
+      <div class="flex items-center justify-center gap-8 md:gap-12 flex-wrap">
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">Ministry of Health</span>
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">WHO</span>
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">CDC Africa</span>
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">Global Fund</span>
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">PATH</span>
+        <span class="text-muted font-semibold text-sm tracking-wide grayscale opacity-60">VillageReach</span>
+      </div>
+    </div>
+  </section>
 
-      <div class="login-actions">
-        <button class="btn btn-primary" id="btnLogin" type="button">Login</button>
-        <a class="btn" href="/" id="btnHome">Home</a>
+  <!-- Features Section -->
+  <section class="py-16" id="features">
+    <div class="max-w-[1100px] mx-auto px-6">
+      <h2 class="text-2xl md:text-3xl font-bold text-center text-text-dark">Everything you need to manage TB care</h2>
+      <p class="text-muted text-center mt-3 max-w-2xl mx-auto text-base">
+        Real-time symptom tracking, medication adherence monitoring, and smart alerts
+        for better patient outcomes.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+        <div class="bg-white border border-border rounded-xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+          <div class="w-14 h-14 bg-accent-light rounded-xl flex items-center justify-center mb-5">
+            <img src="/assets/images/icon-symptoms.svg" alt="Symptom Tracking" class="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-bold text-text-dark mb-3">Symptom Tracking</h3>
+          <p class="text-muted text-sm leading-relaxed">
+            Patients submit daily symptom reports. The system computes risk scores
+            and flags critical cases automatically.
+          </p>
+        </div>
+        <div class="bg-white border border-border rounded-xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+          <div class="w-14 h-14 bg-accent-light rounded-xl flex items-center justify-center mb-5">
+            <img src="/assets/images/icon-medication.svg" alt="Medication Adherence" class="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-bold text-text-dark mb-3">Medication Adherence</h3>
+          <p class="text-muted text-sm leading-relaxed">
+            Log medication intake, track adherence history, and receive reminders
+            to stay on schedule.
+          </p>
+        </div>
+        <div class="bg-white border border-border rounded-xl p-7 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+          <div class="w-14 h-14 bg-accent-light rounded-xl flex items-center justify-center mb-5">
+            <img src="/assets/images/icon-alerts.svg" alt="Smart Alerts" class="w-8 h-8" />
+          </div>
+          <h3 class="text-lg font-bold text-text-dark mb-3">Smart Alerts</h3>
+          <p class="text-muted text-sm leading-relaxed">
+            Automated alerts for critical symptoms, missed doses, and follow-up
+            needs — routed to the right care team.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-16 bg-bg-offwhite" id="stats">
+    <div class="max-w-[1100px] mx-auto px-6">
+      <div class="flex flex-col md:flex-row items-center gap-12">
+        <div class="flex-1 text-center md:text-left">
+          <h2 class="text-2xl md:text-3xl font-bold text-text-dark">Making a measurable impact</h2>
+          <p class="text-muted mt-3 text-base">
+            Our platform has been deployed in district health facilities, supporting
+            clinicians and community health workers with real-time data.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-5 flex-1 w-full">
+          <div class="bg-white border border-border rounded-xl p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <span class="text-3xl font-bold text-primary">2.4K</span>
+            <span class="block text-sm text-muted mt-2">Patients Monitored</span>
+          </div>
+          <div class="bg-white border border-border rounded-xl p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <span class="text-3xl font-bold text-primary">85%</span>
+            <span class="block text-sm text-muted mt-2">Adherence Rate</span>
+          </div>
+          <div class="bg-white border border-border rounded-xl p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <span class="text-3xl font-bold text-primary">1.2K</span>
+            <span class="block text-sm text-muted mt-2">Alerts Resolved</span>
+          </div>
+          <div class="bg-white border border-border rounded-xl p-6 text-center shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
+            <span class="text-3xl font-bold text-primary">12</span>
+            <span class="block text-sm text-muted mt-2">Partner Districts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 border-t border-border">
+    <div class="max-w-[1100px] mx-auto px-6 text-center text-sm text-muted">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Modal -->
+  <div id="loginModal" style="display:none;position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:100;background:rgba(0,0,0,0.3);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-8 relative" style="max-height:90vh;overflow-y:auto;">
+      <button class="absolute top-4 right-4 text-2xl text-muted hover:text-text-dark bg-transparent border-0 cursor-pointer leading-none" id="modalCloseBtn" type="button">&times;</button>
+
+      <!-- Login Form -->
+      <div id="loginForm">
+        <h2 class="text-xl font-bold text-text-dark">Login</h2>
+        <p class="text-muted text-sm mt-1">Sign in to access your dashboard.</p>
+
+        <div id="loginNotice" class="notice" style="display:none"></div>
+
+        <label for="username">Username</label>
+        <input id="username" autocomplete="username" value="" placeholder="e.g., provider1" />
+
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" value="" placeholder="&middot;&middot;&middot;&middot;&middot;&middot;&middot;&middot;" />
+
+        <div class="login-actions">
+          <button class="btn btn-primary" id="btnLogin" type="button">Login</button>
+        </div>
+        <p class="text-muted text-sm mt-4 text-center">
+          Don't have an account?
+          <a href="#" class="text-primary no-underline hover:underline font-medium" id="showRegisterBtn">Register here</a>
+        </p>
+      </div>
+
+      <!-- Register Form -->
+      <div id="registerForm" style="display:none;">
+        <h2 class="text-xl font-bold text-text-dark">Register</h2>
+        <p class="text-muted text-sm mt-1">Create a new account.</p>
+
+        <div id="registerNotice" class="notice" style="display:none"></div>
+
+        <label for="regUsername">Username</label>
+        <input id="regUsername" autocomplete="off" value="" placeholder="Choose a username" />
+
+        <label for="regPassword">Password</label>
+        <input id="regPassword" type="password" autocomplete="off" value="" placeholder="Choose a password" />
+
+        <label for="regRole">Role</label>
+        <select id="regRole">
+          <option value="patient">Patient</option>
+          <option value="nurse">Nurse</option>
+          <option value="provider">Provider</option>
+        </select>
+
+        <div class="login-actions">
+          <button class="btn btn-primary" id="btnRegister" type="button">Register</button>
+        </div>
+        <p class="text-muted text-sm mt-4 text-center">
+          Already have an account?
+          <a href="#" class="text-primary no-underline hover:underline font-medium" id="showLoginBtn">Login here</a>
+        </p>
       </div>
     </div>
   </div>
 
-
-<script type="module">
+  <script type="module">
     import { decodeJwtPayload, setToken } from '/assets/js/api.js';
 
-    const notice = document.getElementById('notice');
-    const show = (msg, kind='error') => {
-      notice.style.display='block';
-      notice.className = `notice ${kind}`;
-      notice.textContent = msg;
+    // Notice helpers
+    const loginNotice = document.getElementById('loginNotice');
+    const registerNotice = document.getElementById('registerNotice');
+    const showNotice = (el, msg, kind='error') => {
+      el.style.display='block';
+      el.className = `notice ${kind}`;
+      el.textContent = msg;
     };
 
+    // Modal open/close
+    const openModal = () => {
+      document.getElementById('loginModal').style.display = 'flex';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('registerForm').style.display = 'none';
+      loginNotice.style.display = 'none';
+      registerNotice.style.display = 'none';
+    };
+    const closeModal = () => {
+      document.getElementById('loginModal').style.display = 'none';
+    };
+
+    // Form switching
+    const showLoginForm = () => {
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('registerForm').style.display = 'none';
+      loginNotice.style.display = 'none';
+      registerNotice.style.display = 'none';
+    };
+    const showRegisterForm = () => {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'block';
+      loginNotice.style.display = 'none';
+      registerNotice.style.display = 'none';
+    };
+
+    document.getElementById('navLoginBtn').addEventListener('click', openModal);
+    document.getElementById('heroLoginBtn').addEventListener('click', openModal);
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('loginModal').addEventListener('click', (e) => {
+      if(e.target === e.currentTarget) closeModal();
+    });
+    document.getElementById('showRegisterBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      showRegisterForm();
+    });
+    document.getElementById('showLoginBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      showLoginForm();
+    });
+
+    // Login
     document.getElementById('btnLogin').addEventListener('click', async ()=>{
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
       try{
-        notice.style.display='none';
+        loginNotice.style.display='none';
 
-// FastAPI OAuth2PasswordRequestForm expects URL-encoded fields.
         const form = new URLSearchParams({ username, password });
         const res = await fetch('/api/auth/login', {
           method:'POST',
@@ -69,11 +307,44 @@
         else if(role === 'patient') location.href = '/patient/dashboard.html';
         else throw new Error('Login succeeded but role was not recognized');
       }catch(err){
-        show(err.message || 'Login failed');
+        showNotice(loginNotice, err.message || 'Login failed');
+      }
+    });
+
+    // Register
+    document.getElementById('btnRegister').addEventListener('click', async ()=>{
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const role = document.getElementById('regRole').value;
+
+      if(!username || !password){
+        showNotice(registerNotice, 'Username and password are required.');
+        return;
+      }
+
+      try{
+        registerNotice.style.display='none';
+
+        const res = await fetch('/api/auth/register', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ username, password, role })
+        });
+
+        const data = await res.json().catch(()=>null);
+        if(!res.ok){
+          throw new Error((data && data.detail) ? data.detail : `HTTP ${res.status}`);
+        }
+
+        showNotice(registerNotice, 'Account created successfully! You can now log in.', 'success');
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regPassword').value = '';
+        setTimeout(showLoginForm, 1500);
+      }catch(err){
+        showNotice(registerNotice, err.message || 'Registration failed');
       }
     });
   </script>
 
 </body>
 </html>
-

@@ -15,8 +15,6 @@ class Settings(BaseSettings):
     access_token_exp_minutes: int = 60 * 24  # 1 day
 
 
-settings = Settings(
-    database_url="${DATABASE_URL}",
-)
+settings = Settings()
 
 

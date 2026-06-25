@@ -3,17 +3,116 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Notifications</title>
+  <title>Notifications - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/patient/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/patient/dashboard.html">Dashboard</a>
+        <a href="/patient/symptoms.html">Symptoms</a>
+        <a href="/patient/medication.html">Medication</a>
+        <a href="/patient/progress.html">Progress</a>
+        <a href="/patient/notifications.html" class="active">Alerts</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>Alerts & Notifications</h1>
+      <a class="btn" href="/patient/dashboard.html">Back to Dashboard</a>
+    </div>
+
     <div class="card">
-      <h1>Notifications</h1>
-      <p class="muted">Placeholder for patient notifications. Alerts API is nurse/provider-only in backend.</p>
-      <a class="btn" href="/patient/dashboard.html">Back</a>
+      <div id="notice" class="notice" style="display:none"></div>
+
+      <div id="alertList">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Message</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="alertTableBody">
+            <tr><td colspan="4" class="loading-row"><div class="spinner"></div>Loading your alerts...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
+  <script type="module">
+    import { apiFetch, getUserRole, clearToken, showToast, wsConnectAlerts } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
+
+    if(getUserRole() !== 'patient'){
+      location.href = '/login.html';
+    }
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
+
+    const notice = document.getElementById('notice');
+    const tbody = document.getElementById('alertTableBody');
+
+    async function loadAlerts() {
+      try {
+        const myPatient = await apiFetch('/patients/my-patient');
+        const patientId = myPatient.patient.id;
+
+        const data = await apiFetch(`/reports/patient/${patientId}`);
+        const alerts = data.report?.open_alerts || [];
+
+        if(alerts.length === 0){
+          tbody.innerHTML = '<tr><td colspan="4" class="muted" style="text-align:center;padding:24px;">No open alerts. You\'re all clear!</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = alerts.map(a => `
+          <tr>
+            <td>${a.alert_type}</td>
+            <td><span class="badge ${a.severity === 'critical' || a.severity === 'high' ? 'badge-danger' : 'badge-warning'}">${a.severity}</span></td>
+            <td>${a.message}</td>
+            <td>${new Date(a.created_at).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+      }catch(e){
+        tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:24px;">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    loadAlerts();
+
+    wsConnectAlerts((alert) => {
+      showToast(alert.message || 'New alert received', 'warning');
+      loadAlerts();
+    });
+  </script>
+
 </body>
 </html>
-
