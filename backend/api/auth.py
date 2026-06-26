@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 from backend.config import settings
 from backend.database.postgres import SessionLocal
-from backend.main_dependencies import get_current_user_payload
+from backend.main_dependencies import get_current_user_payload, require_role
 from backend.models.user import User, Role, PasswordResetToken
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -122,6 +122,19 @@ def me(payload=Depends(get_current_user_payload), db=Depends(get_db)):
         created_at=user.created_at,
     )
 
+
+@router.get("/users", dependencies=[Depends(require_role("provider"))])
+def list_users(role: str | None = None, db=Depends(get_db)):
+    stmt = select(User)
+    if role:
+        stmt = stmt.where(User.role == role)
+    users = db.execute(stmt).scalars().all()
+    return {
+        "users": [
+            {"id": u.id, "username": u.username, "role": u.role.value}
+            for u in users
+        ]
+    }
 
 @router.post("/password-reset/request")
 def request_password_reset(req: PasswordResetRequest, db=Depends(get_db)):

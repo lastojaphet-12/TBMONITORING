@@ -76,16 +76,10 @@
       <label for="village">Village</label>
       <input id="village" placeholder="e.g., Remera" />
 
-      <div class="row">
-        <div style="flex:1;min-width:200px;">
-          <label for="provider_id">Provider ID</label>
-          <input id="provider_id" type="number" placeholder="Leave blank for self" />
-        </div>
-        <div style="flex:1;min-width:200px;">
-          <label for="nurse_id">Nurse ID</label>
-          <input id="nurse_id" type="number" placeholder="Assign a nurse" />
-        </div>
-      </div>
+      <label for="nurseSelect">Assign Nurse</label>
+      <select id="nurseSelect">
+        <option value="">-- No nurse assigned --</option>
+      </select>
 
       <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
         <button class="btn btn-primary" id="btnSubmit" type="button">Register</button>
@@ -101,7 +95,7 @@
   </footer>
 
   <script type="module">
-    import { getUserRole, apiFetch, clearToken } from '/assets/js/api.js';
+    import { getUserRole, getToken, decodeJwtPayload, apiFetch, clearToken } from '/assets/js/api.js';
 
     document.getElementById('navToggle')?.addEventListener('click', () => {
       document.querySelector('.navbar-links')?.classList.toggle('open');
@@ -119,6 +113,24 @@
       notice.textContent = msg;
     };
 
+    const payload = decodeJwtPayload(getToken());
+    const providerId = payload ? Number(payload.sub) : null;
+
+    const nurseSelect = document.getElementById('nurseSelect');
+    (async () => {
+      try {
+        const data = await apiFetch('/auth/users?role=nurse');
+        (data.users || []).forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = `${u.username} (ID: ${u.id})`;
+          nurseSelect.appendChild(opt);
+        });
+      } catch (e) {
+        console.warn('Could not load nurses:', e.message);
+      }
+    })();
+
     document.getElementById('btnSubmit').addEventListener('click', async () => {
       const full_name = document.getElementById('full_name').value.trim();
       const gender = document.getElementById('gender').value;
@@ -129,6 +141,8 @@
         return;
       }
 
+      const nurseVal = nurseSelect.value;
+
       const payload = {
         full_name,
         gender,
@@ -136,8 +150,8 @@
         phone: document.getElementById('phone').value.trim() || null,
         district: document.getElementById('district').value.trim() || null,
         village: document.getElementById('village').value.trim() || null,
-        provider_id: document.getElementById('provider_id').value ? Number(document.getElementById('provider_id').value) : null,
-        nurse_id: document.getElementById('nurse_id').value ? Number(document.getElementById('nurse_id').value) : null,
+        provider_id: providerId,
+        nurse_id: nurseVal ? Number(nurseVal) : null,
       };
 
       try {
@@ -150,8 +164,7 @@
           document.getElementById('phone').value = '';
           document.getElementById('district').value = '';
           document.getElementById('village').value = '';
-          document.getElementById('provider_id').value = '';
-          document.getElementById('nurse_id').value = '';
+          nurseSelect.value = '';
         } else {
           show(res.error || 'Registration failed', 'error');
         }
