@@ -3,17 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Profile</title>
+  <title>Profile - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
+  <style>
+    .profile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+    .profile-item{display:flex;flex-direction:column}
+    .profile-item .label{font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.03em;font-weight:600}
+    .profile-item .value{font-size:1.05rem;color:var(--text-dark);font-weight:500;margin-top:2px}
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>Profile</h1>
-      <p class="muted">UI-only page. JWT payload decoding can be added later.</p>
-      <a class="btn" href="/provider/dashboard.html">Back</a>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/provider/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/provider/dashboard.html">Dashboard</a>
+        <a href="/provider/patient_list.html">Patients</a>
+        <a href="/provider/register_patient.html">Register</a>
+        <a href="/provider/profile.html" class="active">Profile</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <a class="btn" href="/provider/dashboard.html">Back to Dashboard</a>
+    </div>
+
+    <div class="card" style="max-width:600px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="feature-card-icon" style="width:64px;height:64px;">
+          <img src="/assets/images/logo-icon.svg" alt="Profile" width="36" height="36" />
+        </div>
+        <div>
+          <h2 style="margin:0" id="profileName">Provider</h2>
+          <span class="badge badge-success" id="profileRole">provider</span>
+        </div>
+      </div>
+
+      <p class="muted" style="margin-top:16px;">You are logged in as a <strong>Provider</strong>. Use the dashboard to register and manage patients, view reports, and monitor treatment progress.</p>
     </div>
   </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
+  <script type="module">
+    import { getUserRole, clearToken } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
+
+    const role = getUserRole();
+    if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+  </script>
 </body>
 </html>
-

@@ -189,8 +189,6 @@ tbody tr:hover td{background:var(--accent-light)}
   .navbar-inner{position:relative}
   .navbar-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--bg-white);border-bottom:1px solid var(--border);flex-direction:column;padding:16px 24px;gap:16px;box-shadow:var(--shadow)}
   .navbar-links.open{display:flex}
-  .navbar-logout{display:none}
-  .navbar-links .mobile-logout{display:block;color:var(--danger)!important;border-top:1px solid var(--border);margin-top:8px;padding-top:12px;font-weight:600}
 }
 .navbar-logout{
   background:var(--primary);color:#fff;border:none;

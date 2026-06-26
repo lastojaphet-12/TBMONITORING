@@ -3,108 +3,192 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Patient List</title>
+  <title>Patient List - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="row" style="align-items:center;justify-content:space-between;">
-        <h1>Patient List</h1>
-        <a class="btn" href="/provider/dashboard.html">Back</a>
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/provider/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/provider/dashboard.html">Dashboard</a>
+        <a href="/provider/patient_list.html" class="active">Patients</a>
+        <a href="/provider/register_patient.html">Register</a>
+        <a href="/provider/profile.html">Profile</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
+      <h1>Patient List</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a class="btn btn-primary" href="/provider/register_patient.html">Register Patient</a>
+        <a class="btn" href="/provider/dashboard.html">Dashboard</a>
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>TB Number</th>
-            <th>Full Name</th>
-            <th>Gender</th>
-            <th>DOB</th>
-            <th>District</th>
-            <th>Village</th>
-            <th>Phone</th>
-          </tr>
-        </thead>
+    <div id="notice" class="notice" style="display:none;margin-bottom:16px;"></div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="flex:1;min-width:200px;">
+          <input id="searchInput" type="text" placeholder="Search by name, TB number, or district..." style="margin:0;" />
+        </div>
+        <span class="muted" id="patientCount"></span>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>TB Number</th>
+              <th>Name</th>
+              <th>Gender</th>
+              <th>District</th>
+              <th>Phone</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody id="patientTableBody">
-            <tr><td colspan="7" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
+            <tr><td colspan="6" class="loading-row"><div class="spinner"></div>Loading patients...</td></tr>
           </tbody>
         </table>
-        <div id="pagination" class="row" style="justify-content:center;align-items:center;margin-top:16px;display:none;">
-          <button class="btn" id="prevPage" type="button">Previous</button>
-          <span id="pageInfo" class="muted" style="margin:0 12px;"></span>
-          <button class="btn" id="nextPage" type="button">Next</button>
-        </div>
+      </div>
+
+      <div id="pagination" class="row" style="justify-content:center;align-items:center;margin-top:16px;display:none;">
+        <button class="btn" id="prevPage" type="button">Previous</button>
+        <span id="pageInfo" class="muted" style="margin:0 12px;"></span>
+        <button class="btn" id="nextPage" type="button">Next</button>
       </div>
     </div>
+  </div>
 
-    <script type="module">
-      import { getUserRole, apiFetch, showToast } from '/assets/js/api.js';
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
 
-      const role = getUserRole();
-      if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+  <script type="module">
+    import { getUserRole, apiFetch, clearToken } from '/assets/js/api.js';
 
-      const PAGE_SIZE = 10;
-      let currentOffset = 0;
-      let totalPatients = 0;
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
 
-      async function loadPatients(){
-        const tbody = document.getElementById('patientTableBody');
-        try{
-          const data = await apiFetch(`/patients?limit=${PAGE_SIZE}&offset=${currentOffset}`);
-          const patients = data.patients;
-          totalPatients = data.total;
-          if(!patients || patients.length === 0){
-            tbody.innerHTML = '<tr><td colspan="7" class="muted">No patients registered yet.</td></tr>';
-            document.getElementById('pagination').style.display = 'none';
-            return;
-          }
-          tbody.innerHTML = patients.map(p => `
-            <tr>
-              <td>${p.tb_number}</td>
-              <td>${p.full_name}</td>
-              <td>${p.gender}</td>
-              <td>${p.date_of_birth}</td>
-              <td>${p.district || '-'}</td>
-              <td>${p.village || '-'}</td>
-              <td>${p.phone || '-'}</td>
-            </tr>
-          `).join('');
-          updatePagination();
-        }catch(err){
-          tbody.innerHTML = `<tr><td colspan="7" class="muted">Error: ${err.message}</td></tr>`;
-        }
+    const role = getUserRole();
+    if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    const PAGE_SIZE = 10;
+    let currentOffset = 0;
+    let totalPatients = 0;
+    let allPatients = [];
+    let searchQuery = '';
+
+    function renderPatients() {
+      const q = searchQuery.toLowerCase();
+      const filtered = q
+        ? allPatients.filter(p =>
+            (p.full_name || '').toLowerCase().includes(q) ||
+            (p.tb_number || '').toLowerCase().includes(q) ||
+            (p.district || '').toLowerCase().includes(q)
+          )
+        : allPatients;
+
+      const start = currentOffset;
+      const end = Math.min(start + PAGE_SIZE, filtered.length);
+      const page = filtered.slice(start, end);
+
+      document.getElementById('patientCount').textContent = `${filtered.length} patient${filtered.length !== 1 ? 's' : ''}`;
+
+      const tbody = document.getElementById('patientTableBody');
+      if (page.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center;padding:24px;">No patients found.</td></tr>';
+        document.getElementById('pagination').style.display = 'none';
+        return;
       }
 
-      function updatePagination(){
-        const totalPages = Math.ceil(totalPatients / PAGE_SIZE);
-        const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
-        const pagination = document.getElementById('pagination');
-        if(totalPages <= 1){
-          pagination.style.display = 'none';
-          return;
-        }
-        pagination.style.display = 'flex';
-        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${totalPatients} patients)`;
-        document.getElementById('prevPage').disabled = currentOffset === 0;
-        document.getElementById('nextPage').disabled = currentOffset + PAGE_SIZE >= totalPatients;
+      tbody.innerHTML = page.map(p => `
+        <tr>
+          <td>${p.tb_number}</td>
+          <td><a href="/nurse/patient-detail.html?id=${p.id}" style="font-weight:500">${p.full_name}</a></td>
+          <td>${p.gender}</td>
+          <td>${p.district || '-'}</td>
+          <td>${p.phone || '-'}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <a class="btn" href="/nurse/patient-detail.html?id=${p.id}">View</a>
+              <a class="btn" href="/nurse/reports.html?id=${p.id}">Report</a>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      updatePagination(filtered.length);
+    }
+
+    function updatePagination(total) {
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const currentPage = Math.floor(currentOffset / PAGE_SIZE) + 1;
+      const pagination = document.getElementById('pagination');
+      if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
       }
+      pagination.style.display = 'flex';
+      document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages} (${total} patients)`;
+      document.getElementById('prevPage').disabled = currentOffset === 0;
+      document.getElementById('nextPage').disabled = currentOffset + PAGE_SIZE >= total;
+    }
 
-      document.getElementById('prevPage').addEventListener('click', () => {
-        currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
-        loadPatients();
-      });
+    async function loadPatients() {
+      const tbody = document.getElementById('patientTableBody');
+      try {
+        const data = await apiFetch(`/patients?limit=100&offset=0`);
+        allPatients = data.patients || [];
+        totalPatients = allPatients.length;
+        renderPatients();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center;padding:24px;">Error: ${err.message}</td></tr>`;
+      }
+    }
 
-      document.getElementById('nextPage').addEventListener('click', () => {
-        currentOffset = Math.min(totalPatients - 1, currentOffset + PAGE_SIZE);
-        loadPatients();
-      });
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      currentOffset = 0;
+      renderPatients();
+    });
 
-      loadPatients();
-    </script>
+    document.getElementById('prevPage').addEventListener('click', () => {
+      currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
+      renderPatients();
+    });
+
+    document.getElementById('nextPage').addEventListener('click', () => {
+      const q = searchQuery.toLowerCase();
+      const filtered = q
+        ? allPatients.filter(p =>
+            (p.full_name || '').toLowerCase().includes(q) ||
+            (p.tb_number || '').toLowerCase().includes(q) ||
+            (p.district || '').toLowerCase().includes(q)
+          )
+        : allPatients;
+      if (currentOffset + PAGE_SIZE < filtered.length) {
+        currentOffset += PAGE_SIZE;
+        renderPatients();
+      }
+    });
+
+    loadPatients();
+  </script>
 </body>
 </html>
-
-

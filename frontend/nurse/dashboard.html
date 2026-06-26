@@ -75,7 +75,6 @@
         <a href="/nurse/alerts.html">Alerts<span class="alert-badge" id="alertBadge" style="display:none">0</span></a>
         <a href="/nurse/reports.html">Reports</a>
         <a href="/nurse/chat.html">Chat</a>
-        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
       </div>
       <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
     </div>
@@ -210,8 +209,6 @@
 
     const doLogout = () => { clearToken(); location.href = '/login.html'; };
     document.getElementById('logoutBtn').addEventListener('click', doLogout);
-    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
-
     (async () => {
       try {
         const [patientsData, alertsData] = await Promise.all([
