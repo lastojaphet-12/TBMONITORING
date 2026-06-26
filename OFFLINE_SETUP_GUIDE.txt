@@ -1,0 +1,51 @@
+=== TBMonitoring Offline Setup Guide ===
+
+== 1. Prerequisites (do once while online) ==
+
+Ensure Docker Desktop is installed and pull all required images:
+
+  docker pull postgres:16
+  docker pull influxdb:2.7
+  docker pull nginx:1.27
+  docker pull python:3.12-slim
+
+== 2. Start the project (works offline after images are cached) ==
+
+Open PowerShell / CMD in the project root:
+
+  cd TBMONITORING
+  docker compose up --build
+
+This starts 4 containers:
+  - postgres   on port 5433   -- main database
+  - influxdb   on port 8086   -- time-series data
+  - backend    on port 8000   -- Python/FastAPI
+  - nginx      on port 80     -- serves frontend + proxies /api/ to backend
+
+== 3. Access the application ==
+
+  http://localhost       -- Login page (nginx serves frontend)
+  http://localhost/health -- Backend health check (returns {"status": "ok"})
+
+== 4. Default login credentials ==
+
+Seeded automatically on first startup (see backend/database/seed_data.py):
+  - Patient username/password: defined in seed_data.py
+  - Nurse username/password: defined in seed_data.py
+  - Provider username/password: defined in seed_data.py
+
+== 5. Stopping ==
+
+  docker compose down
+
+To also wipe volumes (reset database and InfluxDB data):
+
+  docker compose down -v
+
+== 6. Offline gotchas ==
+
+  - "docker compose up --build" builds the backend image from source.
+    No network is needed as long as requirements.txt hasn't changed since
+    the last build. If you modify requirements.txt while offline, the
+    pip install step will fail.
+  - All Docker images must be pulled at least once while online (step 1).

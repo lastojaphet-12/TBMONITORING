@@ -173,6 +173,12 @@
     </div>
   </footer>
 
+  <script>
+    window.addEventListener('error', function(e) {
+      const el = document.getElementById('loadingNotice');
+      if(el) el.innerHTML = '<span class="muted" style="color:var(--danger)">Page error: ' + (e.message || 'unknown') + '. <a href=".">Reload</a></span>';
+    });
+  </script>
   <script type="module">
     import { apiFetch, getUserRole, clearToken, showToast } from '/assets/js/api.js';
 
@@ -204,10 +210,17 @@
         loading.innerHTML = '<div class="spinner"></div> Loading report...';
         reportArea.style.display = 'none';
 
-        const [reportData, symptomsData, adherenceData] = await Promise.all([
-          apiFetch(`/reports/patient/${patientId}`),
-          apiFetch(`/symptoms/history/${patientId}`),
-          apiFetch(`/adherence/history/${patientId}`),
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out. The server may be unreachable.')), 20000)
+        );
+
+        const [reportData, symptomsData, adherenceData] = await Promise.race([
+          Promise.all([
+            apiFetch(`/reports/patient/${patientId}`),
+            apiFetch(`/symptoms/history/${patientId}`),
+            apiFetch(`/adherence/history/${patientId}`),
+          ]),
+          timeout,
         ]);
 
         const report = reportData.report;

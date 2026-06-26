@@ -147,6 +147,12 @@
     </div>
   </footer>
 
+  <script>
+    window.addEventListener('error', function(e) {
+      const el = document.getElementById('loadingNotice');
+      if(el) el.innerHTML = '<span class="muted" style="color:var(--danger)">Page error: ' + (e.message || 'unknown') + '. <a href=".">Reload</a></span>';
+    });
+  </script>
   <script type="module">
     import { apiFetch, getUserRole, clearToken, showToast } from '/assets/js/api.js';
 
@@ -168,17 +174,18 @@
       } catch(e) { /* ignore */ }
     })();
 
-    const params = new URLSearchParams(location.search);
-    const patientId = params.get('id');
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const patientId = params.get('id');
 
-    if(!patientId){
-      document.getElementById('loadingNotice').innerHTML = '<span class="muted">No patient ID specified. <a href="/nurse/monitoring.html">Go back to patient list.</a></span>';
-      return;
-    }
+      if(!patientId){
+        document.getElementById('loadingNotice').innerHTML = '<span class="muted">No patient ID specified. <a href="/nurse/monitoring.html">Go back to patient list.</a></span>';
+        return;
+      }
 
-    document.getElementById('fullReportLink').href = `/nurse/reports.html?id=${patientId}`;
+      document.getElementById('fullReportLink').href = `/nurse/reports.html?id=${patientId}`;
 
-    const riskColors = {
+      const riskColors = {
       'Critical': 'badge-danger',
       'High Risk': 'badge-danger',
       'Moderate Risk': 'badge-warning',
@@ -194,11 +201,18 @@
         loading.innerHTML = '<div class="spinner"></div> Loading patient details...';
         content.style.display = 'none';
 
-        const [patientData, reportData, symptomsData, adherenceData] = await Promise.all([
-          apiFetch(`/patients/${patientId}`),
-          apiFetch(`/reports/patient/${patientId}`),
-          apiFetch(`/symptoms/history/${patientId}`),
-          apiFetch(`/adherence/history/${patientId}`),
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out. The server may be unreachable.')), 20000)
+        );
+
+        const [patientData, reportData, symptomsData, adherenceData] = await Promise.race([
+          Promise.all([
+            apiFetch(`/patients/${patientId}`),
+            apiFetch(`/reports/patient/${patientId}`),
+            apiFetch(`/symptoms/history/${patientId}`),
+            apiFetch(`/adherence/history/${patientId}`),
+          ]),
+          timeout,
         ]);
 
         const patient = patientData.patient;
@@ -303,6 +317,7 @@
 
     document.getElementById('btnRefresh').addEventListener('click', loadPatient);
     loadPatient();
+  })();
   </script>
 
 </body>

@@ -53,7 +53,7 @@ def list_alerts(payload=Depends(get_current_user_payload), db: Session = Depends
     }
 
 
-@router.post("/{alert_id}/resolve", dependencies=[Depends(require_role("nurse"))])
+@router.post("/{alert_id}/resolve", dependencies=[Depends(require_role("nurse", "provider"))])
 def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
     alert = db.get(Alert, alert_id)
     if not alert:
