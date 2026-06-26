@@ -86,7 +86,7 @@ def get_patient(patient_id: int, payload=Depends(get_current_user_payload), db=D
 
 
 class PatientCreate(BaseModel):
-    tb_number: str
+    tb_number: str | None = None  # auto-generated if omitted
     full_name: str
     gender: str
     date_of_birth: str
@@ -124,13 +124,9 @@ def create_patient(payload: PatientCreate):
             if getattr(nurse, "role", None).value != "nurse":
                 return {"created": False, "error": "nurse_id must belong to a nurse user"}
 
-        existing = db.execute(select(Patient).where(Patient.tb_number == payload.tb_number)).scalar_one_or_none()
-        if existing:
-            return {"created": False, "error": "tb_number already exists"}
-
         dt = datetime.fromisoformat(payload.date_of_birth)
         patient = Patient(
-            tb_number=payload.tb_number,
+            tb_number=payload.tb_number or '__PLACEHOLDER__',
             full_name=payload.full_name,
             gender=payload.gender,
             date_of_birth=dt,
@@ -143,6 +139,9 @@ def create_patient(payload: PatientCreate):
             created_at=datetime.utcnow(),
         )
         db.add(patient)
+        db.flush()
+        if not payload.tb_number:
+            patient.tb_number = f"TB-{patient.id:04d}"
         db.commit()
         db.refresh(patient)
 

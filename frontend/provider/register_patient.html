@@ -3,66 +3,118 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Register Patient</title>
+  <title>Register Patient - TBMonitor</title>
   <link rel="stylesheet" href="/assets/css/common.css" />
 </head>
 <body>
-  <div class="container">
-    <div class="card">
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="/provider/dashboard.html" class="navbar-brand">
+        <img src="/assets/images/logo-icon.svg" alt="TB Monitor" width="32" height="32" />
+        TB<span>Monitor</span>
+      </a>
+      <button class="navbar-toggle" id="navToggle" type="button" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+      <div class="navbar-links">
+        <a href="/provider/dashboard.html">Dashboard</a>
+        <a href="/provider/patient_list.html">Patients</a>
+        <a href="/provider/register_patient.html" class="active">Register</a>
+        <a href="/provider/profile.html">Profile</a>
+        <a href="#" id="mobileLogout" class="mobile-logout">Logout</a>
+      </div>
+      <button class="navbar-logout" id="logoutBtn" type="button">Logout</button>
+    </div>
+  </nav>
+
+  <div class="section-content" style="padding-top:96px;padding-bottom:32px;">
+    <div class="page-header">
       <h1>Register Patient</h1>
-      <p class="muted">Submits to <code>POST /api/patients</code></p>
-      <div id="notice" class="notice" style="display:none"></div>
+      <a class="btn" href="/provider/dashboard.html">Back to Dashboard</a>
+    </div>
 
-      <label for="tb_number">TB Number</label>
-      <input id="tb_number" placeholder="TB-001" />
+    <div class="card" style="max-width:720px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div class="feature-card-icon">
+          <img src="/assets/images/icon-medication.svg" alt="Register" width="32" height="32" />
+        </div>
+        <div>
+          <h2 style="margin:0">New Patient Registration</h2>
+          <p class="muted" style="margin:4px 0 0">Fill in the details below to add a new patient to the system.</p>
+        </div>
+      </div>
 
-      <label for="full_name">Full Name</label>
-      <input id="full_name" placeholder="John Doe" />
+      <div id="notice" class="notice" style="display:none;"></div>
 
-      <label for="gender">Gender</label>
-      <select id="gender">
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
-      </select>
-
-      <label for="date_of_birth">Date of Birth</label>
-      <input id="date_of_birth" placeholder="YYYY-MM-DD" />
+      <label for="full_name">Full Name <span style="color:var(--danger)">*</span></label>
+      <input id="full_name" placeholder="e.g., Jean-Pierre Habimana" />
 
       <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label for="phone">Phone (optional)</label>
+        <div style="flex:1;min-width:200px;">
+          <label for="gender">Gender <span style="color:var(--danger)">*</span></label>
+          <select id="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label for="date_of_birth">Date of Birth <span style="color:var(--danger)">*</span></label>
+          <input id="date_of_birth" type="date" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div style="flex:1;min-width:200px;">
+          <label for="phone">Phone</label>
           <input id="phone" placeholder="+250..." />
         </div>
-        <div style="flex:1;min-width:220px;">
-          <label for="district">District (optional)</label>
-          <input id="district" placeholder="District" />
+        <div style="flex:1;min-width:200px;">
+          <label for="district">District</label>
+          <input id="district" placeholder="e.g., Kigali" />
         </div>
       </div>
 
-      <label for="village">Village (optional)</label>
-      <input id="village" placeholder="Village" />
+      <label for="village">Village</label>
+      <input id="village" placeholder="e.g., Remera" />
 
       <div class="row">
-        <div style="flex:1;min-width:220px;">
-          <label for="provider_id">Provider ID (optional)</label>
-          <input id="provider_id" type="number" />
+        <div style="flex:1;min-width:200px;">
+          <label for="provider_id">Provider ID</label>
+          <input id="provider_id" type="number" placeholder="Leave blank for self" />
         </div>
-        <div style="flex:1;min-width:220px;">
-          <label for="nurse_id">Nurse ID (optional)</label>
-          <input id="nurse_id" type="number" />
+        <div style="flex:1;min-width:200px;">
+          <label for="nurse_id">Nurse ID</label>
+          <input id="nurse_id" type="number" placeholder="Assign a nurse" />
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
         <button class="btn btn-primary" id="btnSubmit" type="button">Register</button>
-        <a class="btn" href="/provider/dashboard.html">Back</a>
+        <a class="btn" href="/provider/dashboard.html">Cancel</a>
       </div>
     </div>
   </div>
 
+  <footer class="footer">
+    <div class="footer-inner">
+      &copy; 2026 TB Monitoring System. All rights reserved.
+    </div>
+  </footer>
+
   <script type="module">
-    import { apiFetch } from '/assets/js/api.js';
+    import { getUserRole, apiFetch, clearToken } from '/assets/js/api.js';
+
+    document.getElementById('navToggle')?.addEventListener('click', () => {
+      document.querySelector('.navbar-links')?.classList.toggle('open');
+    });
+
+    const role = getUserRole();
+    if(role && role !== 'provider') location.href = '/'+role+'/dashboard.html';
+
+    const doLogout = () => { clearToken(); location.href = '/login.html'; };
+    document.getElementById('logoutBtn').addEventListener('click', doLogout);
+    document.getElementById('mobileLogout')?.addEventListener('click', (e) => { e.preventDefault(); doLogout(); });
+
     const notice = document.getElementById('notice');
     const show = (msg, kind='error') => {
       notice.style.display='block';
@@ -70,12 +122,20 @@
       notice.textContent = msg;
     };
 
-    document.getElementById('btnSubmit').addEventListener('click', async ()=>{
+    document.getElementById('btnSubmit').addEventListener('click', async () => {
+      const full_name = document.getElementById('full_name').value.trim();
+      const gender = document.getElementById('gender').value;
+      const date_of_birth = document.getElementById('date_of_birth').value;
+
+      if (!full_name || !date_of_birth) {
+        show('Please fill in all required fields (name, DOB).', 'error');
+        return;
+      }
+
       const payload = {
-        tb_number: document.getElementById('tb_number').value.trim(),
-        full_name: document.getElementById('full_name').value.trim(),
-        gender: document.getElementById('gender').value,
-        date_of_birth: document.getElementById('date_of_birth').value.trim(),
+        full_name,
+        gender,
+        date_of_birth,
         phone: document.getElementById('phone').value.trim() || null,
         district: document.getElementById('district').value.trim() || null,
         village: document.getElementById('village').value.trim() || null,
@@ -83,15 +143,25 @@
         nurse_id: document.getElementById('nurse_id').value ? Number(document.getElementById('nurse_id').value) : null,
       };
 
-      try{
-        notice.style.display='none';
-        const res = await apiFetch('/patients', { method:'POST', body:payload });
-        show(`Registered (response): ${JSON.stringify(res)}`,'success');
-      }catch(e){
-        show(e.message || 'Failed to register');
+      try {
+        notice.style.display = 'none';
+        const res = await apiFetch('/patients', { method: 'POST', body: payload });
+        if (res.created) {
+          show(`Patient #${res.patient.id} (${res.patient.full_name}) registered successfully!`, 'success');
+          document.getElementById('full_name').value = '';
+          document.getElementById('date_of_birth').value = '';
+          document.getElementById('phone').value = '';
+          document.getElementById('district').value = '';
+          document.getElementById('village').value = '';
+          document.getElementById('provider_id').value = '';
+          document.getElementById('nurse_id').value = '';
+        } else {
+          show(res.error || 'Registration failed', 'error');
+        }
+      } catch (e) {
+        show(e.message || 'Failed to register patient', 'error');
       }
     });
   </script>
 </body>
 </html>
-
